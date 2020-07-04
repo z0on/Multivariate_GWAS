@@ -86,20 +86,20 @@ require(dplyr)
 require(vegan)
 require(ggplot2)
 
-#setwd("~/Dropbox/amil_RDA_association_jun2020/")
+#setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS")
 
 #---- reading and aligning data
 
-# gtfile = "chr1.postAlleles"
-# covars = "mds7"
-# traits = "bleach.traits"
-# bams = "bams.qc"
-# ibs="zz8.ibsMat"
-# outfile="chr1.bl.mds7.rep10.RData"
-# plots=TRUE
-# nsites=5500000
-# prune.dist=50000
-# hold.out="rep10_25"
+ # gtfile = "chr14.postAlleles"
+ # covars = "simple.covars"
+ # traits = "pd.traits"
+ # bams = "bams.qc"
+ # ibs="zz8.ibsMat"
+ # outfile="chr14.RData"
+ # plots=TRUE
+ # nsites=5500000
+ # prune.dist=50000
+ # hold.out="rep10_25"
 
 bams=scan(bams,what="character")
 #removing path
@@ -112,13 +112,13 @@ if(length(bams)!=nrow(ibs)) { stop("genetic distance matrix and gdist.sample fil
 dimnames(ibs)=list(bams,bams)
 goods.ibs=row.names(na.omit(ibs))
 
-traits=read.table(traits,header=T,stringsAsFactors=F,sep="\t")
+traits=read.table(traits,header=T,stringsAsFactors=F)
 row.names(traits)=traits$sample
 traits$sample=NULL
 tnames=names(traits)
 goods.traits=row.names(na.omit(traits))
 
-covars=read.table(covars,header=T,stringsAsFactors=F,sep="\t")
+covars=read.table(covars,header=T,stringsAsFactors=F)
 row.names(covars)=covars$sample
 covars$sample=NULL
 goods.covars=row.names(na.omit(covars))
