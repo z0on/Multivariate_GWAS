@@ -21,7 +21,7 @@ https://doi.org/10.1111/mec.13476
 https://doi.org/10.1111/mec.14584
 
 #### RDA_GWAS.R: Arguments
-> **Note** all tables must be space-delimited
+> **Note:** all tables must be space-delimited
 
 **gt=[filename]** Genotypes: table of minor allele counts (rows - loci, columns - samples) the first two columns must be chromosome, position header line must be present (chr, pos, sample names)
 
