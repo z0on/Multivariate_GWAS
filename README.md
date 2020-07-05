@@ -7,7 +7,7 @@
 - naturally generates empirical null distribution to detect true signal and calculate p-values
 - several correlated traits can be used together as a "compound trait"
 
-The key script here is **RDA_GWAS.R**. Below is the "help" page it would print if run without any arguments. The genotype file needed to run these, *chr14.postAlleles*, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . See *example_calls_RDA_GWAS.sh* for test calls, or just copy-paste from here:
+The key script here is **RDA_GWAS.R**. Below is the "help" page it would print if run without any arguments. The genotype file needed to run these, *chr14.postAlleles.gz*, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . See *example_calls_RDA_GWAS.sh* for test calls, or just copy-paste from here:
 ```bash
 # for bleaching traits (3 traits together)
 Rscript RDA_GWAS.R gt=chr14.postAlleles covars=mds2_10_25 traits=bleach.traits gdist.samples=bams.qc gdist=zz8.ibsMat hold.out=rep10_25 outfile=chr14.bl.mds2.rep10.RData
