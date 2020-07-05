@@ -85,6 +85,7 @@ if(length(hold.out)>0) { hold.out=sub("hold.out=","", commandArgs()[hold.out]) }
 require(dplyr)
 require(vegan)
 require(ggplot2)
+require(glmnet)
 
 # setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS")
 
@@ -362,8 +363,6 @@ if (plots) {
 }
 
 #------- regularized regression
-
-library(glmnet)
 
 # determining best alpha 
 gnets=function(dat,trait,alpha=0.5) {

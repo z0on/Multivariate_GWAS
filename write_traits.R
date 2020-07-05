@@ -12,6 +12,9 @@ write.table(pd,file="pd.traits",quote=F,row.names=F)
 bleach=bigtraits[,c(2,6,4,5)]
 head(bleach)
 write.table(bleach,file="bleach.traits",quote=F,row.names=F)
+bleach=bigtraits[,c(2,6)]
+head(bleach)
+write.table(bleach,file="blscore.traits",quote=F,row.names=F)
 
 
 load("rda_covariates.RData")
