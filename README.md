@@ -21,9 +21,9 @@ https://doi.org/10.1111/mec.13476
 https://doi.org/10.1111/mec.14584
 
 #### RDA_GWAS.R: Arguments
-> **Note:** all tables must be space-delimited
+> **Note:** all tables must be space-delimited, and can be compressed .gz files.
 
-**gt=[filename]** Genotypes: table of minor allele counts (rows - loci, columns - samples) the first two columns must be chromosome, position header line must be present (chr, pos, sample names). Can be a compressed .gz file.
+**gt=[filename]** Genotypes: table of minor allele counts (rows - loci, columns - samples) the first two columns must be chromosome, position header line must be present (chr, pos, sample names).
 
 **covars=[filename]**  Table of covariates to use (rows - samples, columns - covariates). First column must be sample names. Header line must be present (sample, covariates). May not fully match the genotype table. Rows containing NA will be removed.
 
