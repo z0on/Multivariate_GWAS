@@ -7,14 +7,14 @@
 - naturally generates empirical null distribution to detect true signal and calculate p-values
 - several correlated traits can be used together as a "compound trait"
 
-The key script here is **RDA_GWAS.R**. Below is the "help" page it would print if run without any arguments. The genotype file needed to run these, *chr14.postAlleles*, is here: https://www.dropbox.com/s/3y31yxqk6lh7685/chr14.postAlleles . See *example_calls_RDA_GWAS.sh* for test calls, or just copy-paste from here:
+The key script here is **RDA_GWAS.R**. Below is the "help" page it would print if run without any arguments. The genotype file needed to run these, *chr14.postAlleles*, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . See *example_calls_RDA_GWAS.sh* for test calls, or just copy-paste from here:
 ```bash
 # for bleaching traits (3 traits together)
-Rscript RDA_GWAS.R gt=chr14.postAlleles covars=mds7 traits=bleach.traits gdist.samples=bams.qc gdist=zz8.ibsMat hold.out=rep10_25 outfile=chr14.bl.mds7.rep10.RData
+Rscript RDA_GWAS.R gt=chr14.postAlleles covars=mds2_10_25 traits=bleach.traits gdist.samples=bams.qc gdist=zz8.ibsMat hold.out=rep10_25 outfile=chr14.bl.mds2.rep10.RData
 # for proportion of D symbionts
-Rscript RDA_GWAS.R gt=chr14.postAlleles covars=mds7 traits=pd.traits gdist.samples=bams.qc gdist=zz8.ibsMat hold.out=rep10_25 outfile=chr14.pd.mds7.rep10.RData
+Rscript RDA_GWAS.R gt=chr14.postAlleles.gz covars=mds2_10_25 traits=pd.traits gdist.samples=bams.qc gdist=zz8.ibsMat hold.out=rep10_25 outfile=chr14.pd.mds2.rep10.RData
 # prop D with different covariates
-Rscript RDA_GWAS.R gt=chr14.postAlleles covars=simple.covars traits=pd.traits gdist.samples=bams.qc gdist=zz8.ibsMat hold.out=rep10_25 outfile=chr14.pd.simcov.rep10.RData
+Rscript RDA_GWAS.R gt=chr14.postAlleles.gz covars=technical.covars traits=pd.traits gdist.samples=bams.qc gdist=zz8.ibsMat hold.out=rep10_25 outfile=chr14.pd.techcov.rep10.RData
 ```
 This project is based on the idea of using constrained ordination to look for genotype-environment associations, presented in papers by Brenna R. Forester et al: 
 https://doi.org/10.1111/mec.13476
@@ -23,7 +23,7 @@ https://doi.org/10.1111/mec.14584
 #### RDA_GWAS.R: Arguments
 > **Note:** all tables must be space-delimited
 
-**gt=[filename]** Genotypes: table of minor allele counts (rows - loci, columns - samples) the first two columns must be chromosome, position header line must be present (chr, pos, sample names)
+**gt=[filename]** Genotypes: table of minor allele counts (rows - loci, columns - samples) the first two columns must be chromosome, position header line must be present (chr, pos, sample names). Can be a compressed .gz file.
 
 **covars=[filename]**  Table of covariates to use (rows - samples, columns - covariates). First column must be sample names. Header line must be present (sample, covariates). May not fully match the genotype table. Rows containing NA will be removed.
 
