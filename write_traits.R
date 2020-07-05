@@ -1,3 +1,4 @@
+setwd('~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS')
 load('~/Dropbox/amil_RDA_association_jun2020/Amil2020_bigtraits.RData')
 head(bigtraits)
 
@@ -21,5 +22,6 @@ head(mds)
 write.table(mds,file="mds7",quote=F,row.names=F)
 
 
-covars=read.table("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/simple.covars",header=T,stringsAsFactors=F,sep="\t")
-write.table(covars,file="~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/simple.covars",quote=F,row.names=F)
+covars=read.table("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/simple.covars",header=T,stringsAsFactors=F)
+head(covars)
+write.table(covars[,c(1,3,4)],file="~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/technical.covars",quote=F,row.names=F)

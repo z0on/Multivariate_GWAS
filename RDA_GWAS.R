@@ -86,20 +86,20 @@ require(dplyr)
 require(vegan)
 require(ggplot2)
 
-#setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS")
+# setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS")
 
 #---- reading and aligning data
 
- # gtfile = "chr14.postAlleles"
- # covars = "simple.covars"
- # traits = "pd.traits"
- # bams = "bams.qc"
- # ibs="zz8.ibsMat"
- # outfile="chr14.RData"
- # plots=TRUE
- # nsites=5500000
- # prune.dist=50000
- # hold.out="rep10_25"
+      # gtfile = "c1314.small.postAlleles"
+      # covars = "technical.covars"
+      # traits = "pd.traits"
+      # bams = "bams.qc"
+      # ibs="zz8.ibsMat"
+      # outfile="chr1314sm2.RData"
+      # plots=TRUE
+      # nsites=5500000
+      # prune.dist=50000
+      # hold.out="rep10_25"
 
 bams=scan(bams,what="character")
 #removing path
@@ -287,68 +287,75 @@ if(plots) {
 	}
 }
 
-#----------- pruning SNPs by z-scores and distance, computing simple betas and r2s
+#----------- pruning SNPs by z-scores and distance, computing simple betas and r2s (by chromosome)
 
 blips=which(abs(snp.scores)>2)
 message("\n",outfile," ",length(blips)," blips; pruning...")
-sorted=order(abs(snp.scores[blips]),decreasing=T)
 tops=gt[blips,]
-chs=row.names(tops[sorted,])
-chrs=sub(":.+","",chs)
-pos=as.numeric(sub(".+:","",chs))
-r2s=vector(mode="numeric",length=nrow(tops));bs=vector(mode="numeric",length=nrow(tops))
-pb=txtProgressBar(0,length(sorted))
-plus=minus=c(-2*prune.dist);s=100
-for (s in 1:length(sorted)) {
-	i=sorted[s]
-	setTxtProgressBar(pb,s)
-# skipping sites if closer than prune.dist to any of the already profiled ones
-	ss=snp.scores[blips][i]
-	if (ss>=0) {
-		if(min(abs(plus-pos[s]))<prune.dist) {
-			bs[i]=0
-			r2s[i]=0
-			next
-		} else { plus=append(plus,pos[s]) }
-	} else {
-		if(min(abs(minus-pos[s]))<prune.dist) {
-			bs[i]=0
-			r2s[i]=0
-			next
-		} else { minus=append(minus,pos[s]) }
+tops.scores=snp.scores[blips]
+chs=row.names(tops)
+chroms=as.factor(sub(":.+","",chs))
+poss=as.numeric(sub(".+:","",chs))
+r2s=c();bs=c()
+for (chr in levels(chroms)) {
+	message("\n     chromosome ",chr)
+	tsc=tops.scores[chroms==chr]
+	tops.c=tops[chroms==chr,]
+	sorted=order(abs(tsc),decreasing=T)
+message("      ",length(sorted)," blips")
+	pb=txtProgressBar(0,length(sorted))
+	pos=poss[chroms==chr][sorted]
+	r2=vector(mode="numeric",length=length(sorted));b=vector(mode="numeric",length=length(sorted))
+	plus=minus=c(-2*prune.dist);s=100
+	for (s in 1:length(sorted)) {
+		i=sorted[s]
+		setTxtProgressBar(pb,s)
+	# skipping sites if closer than prune.dist to any of the already profiled ones
+		ss=tsc[i]
+#		if(abs(ss)<2) { message("\n===> low score: ",ss," s:",s," i:",i)}
+		if (ss>=0) {
+			if(min(abs(plus-pos[s]))<prune.dist) {
+				b[i]=0
+				r2[i]=0
+				next
+			} else { plus=append(plus,pos[s]) }
+		} else {
+			if(min(abs(minus-pos[s]))<prune.dist) {
+				b[i]=0
+				r2[i]=0
+				next
+			} else { minus=append(minus,pos[s]) }
+		}
+		mm=lm(sample.scores~t(tops.c[i,]))
+		r2[i]=round(summary(mm)$adj.r.squared,4)
+		b[i]=coef(mm)[2]
 	}
-	mm=lm(sample.scores~t(tops[i,]))
-	r2s[i]=round(summary(mm)$adj.r.squared,4)
-	bs[i]=coef(mm)[2]
+	r2s=append(r2s,r2)
+	bs=append(bs,b)
 }
-out=data.frame(cbind(zscore=snp.scores[blips],pvals=pvals[blips],padj=padj[blips],beta=bs,r2=r2s),stringsAsFactors=F)
-row.names(out)=row.names(tops)
-out$chr=sub(":.+","",row.names(tops))
-out$pos=sub(".+:","",row.names(tops))
-#	str(out)
+
+out=data.frame(cbind(zscore=tops.scores,pvals=pvals[blips],padj=padj[blips],beta=bs,r2=r2s),stringsAsFactors=F)
+row.names(out)=row.names(gt[blips,])
+out$chr=as.factor(sub(":.+","",row.names(gt[blips,])))
+out$pos=as.numeric(sub(".+:","",row.names(gt[blips,])))
 out=out[!(bs==0),]
-out$zscore=as.numeric(out$zscore)
-out$pvals=as.numeric(out$pvals)
-out$padj=as.numeric(out$padj)
-out$pos=as.numeric(out$pos)
-out$beta=as.numeric(out$beta)
-out$r2=as.numeric(out$r2)
+out$logp=-log(out$pvals,10)
+out$logp.adj=-log(out$padj,10)
 message("\n",outfile," ",nrow(out)," independent blips collected")
 gt.s=gt[row.names(out),]
 
 #------ replotting pruned manhattan plot
 
 if (plots) { 
-	pos2=out$pos/1000
-	manh2=manh[manh$pos %in% pos2,]
-	for (chr in levels(manh2$chrom)) { 
-		mc=subset(manh2,chrom==chr)
+	out$pos.kb=out$pos/1000;ch="chr13"
+	for (ch in levels(out$chr)) { 
+		mc=out[out$chr==ch,]
 		pp=ggplot(mc,aes(pos,logp))+
 			geom_point(shape = 21, colour = "grey20", aes(size=logp.adj,fill=zscore))+
 		    scale_size_continuous(limits=c(0,3),breaks=c(0.3,0.6,1,1.3,2),labels=c(0.5,0.25,0.1,0.05,1e-2))+
 			scale_fill_gradient(low="cyan3",high="coral")+
 			theme_bw() + labs(size = "p.adj")+
-			ylim(min(mc$logp),max(c(7,max(manh$logp))))+ggtitle(paste(chr,"pruned"))+
+			ylim(min(mc$logp),max(c(7,max(mc$logp))))+ggtitle(paste(ch,"pruned"))+
 			xlab("position,kb")
 		plot(pp)
 	}
@@ -419,7 +426,7 @@ if(plots){
 	for (i in 1:ncol(gt.test.p)) {
 		pree[i]=sum(out$beta.rr*gt.test.p[,i])+out$intercept[1]
 	}
-	plot(pree~traits.test[,1],main="fancy betas")
+	plot(pree~traits.test[,1],main="reg.reg. betas")
 	mtext(round(cor(pree,tt),2))
 	
 	pree2=c()
@@ -435,7 +442,7 @@ if(plots){
 	}
 	plot(pree3~traits.test[,1],main="simple betas")
 	mtext(round(cor(pree3,tt),2))
-}
 
-dev.off()
+	dev.off() 
+}
 
