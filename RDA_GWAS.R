@@ -41,7 +41,8 @@ nsites=5500000       number of sites to compute FDR (for Manhattan plot)
 prune.dist=50000     pruning distance (selected SNPs must be at least that far apart)
 
 Output:              An RData bundle containing results table for pruned SNPs (out) with zscores, pvalues, 
-                     betas and R2, their genotypes (gt.s), and manhattan plot data for all sites (manh).
+                     betas and R2, their genotypes (gt.s), manhattan plot data for all sites (manh), and genetic
+                     distances matrix corresponding to the data (ibs).
    
 Mikhail Matz, matz@utexas.edu, July 2020
 
@@ -410,7 +411,7 @@ intercept=coef(model,s=lambda)@x[1]
 out$beta.rr=betas
 out$intercept.rr=intercept
 
-save(out,gt.s,manh,file=outfile)
+save(out,gt.s,manh,ibs,file=outfile)
 
 #---------------- predictng test set (if not specified, predict same set)
 
