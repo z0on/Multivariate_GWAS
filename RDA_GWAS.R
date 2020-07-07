@@ -412,7 +412,7 @@ intercept=coef(model,s=lambda)@x[1]
 out$beta.rr=betas
 out$intercept.rr=intercept
 
-save(out,gt.s,gt.test,manh,file=outfile)
+save(out,gt.s,gt.test,sample.scores,manh,file=outfile)
 
 #---------------- predictng test set (if not specified, predict same set)
 
