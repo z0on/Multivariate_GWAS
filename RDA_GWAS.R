@@ -159,7 +159,7 @@ gt=distinct(gt,paste(gt[,1],gt[,2],sep=":"),.keep_all=T)
 row.names(gt)=paste(gt[,1],gt[,2],sep=":")
 gt=gt[,-c(1,2,ncol(gt))]
 colnames(gt)=bams
-if (hold.out>0) { gt.test=gt[,goods.test] }
+if (hold.out>0) { gt.test=gt[,goods.test] } else { gt.test=0 }
 gt=gt[,goods.use]
 
 #------- computing RDA and SNP scores against CAP1
@@ -345,6 +345,7 @@ out$logp=-log(out$pvals,10)
 out$logp.adj=-log(out$padj,10)
 message("\n",outfile," ",nrow(out)," independent blips collected")
 gt.s=gt[row.names(out),]
+if(hold.out!=0) { gt.test=gt.test[row.names(out),] }
 
 #------ replotting pruned manhattan plot
 
@@ -411,7 +412,7 @@ intercept=coef(model,s=lambda)@x[1]
 out$beta.rr=betas
 out$intercept.rr=intercept
 
-save(out,gt.s,manh,ibs,file=outfile)
+save(out,gt.s,gt.test,manh,file=outfile)
 
 #---------------- predictng test set (if not specified, predict same set)
 
@@ -422,23 +423,22 @@ if(plots){
 	tt[which(is.na(tt))]=mean(tt,na.rm=T)
 	
 	pree=c()
-	gt.test.p=gt.test[row.names(out),]
-	for (i in 1:ncol(gt.test.p)) {
-		pree[i]=sum(out$beta.rr*gt.test.p[,i])+out$intercept[1]
+	for (i in 1:ncol(gt.test)) {
+		pree[i]=sum(out$beta.rr*gt.test[,i])+out$intercept[1]
 	}
 	plot(pree~traits.test[,1],main="reg.reg. betas")
 	mtext(round(cor(pree,tt),2))
 	
-	pree2=c()
-	for (i in 1:ncol(gt.test.p)) {
-		pree2[i]=sum(out$beta*out$r2*gt.test.p[,i])
-	}
-	plot(pree2~traits.test[,1],main="simple betas * R2")
-	mtext(round(cor(pree2,tt),2))
+	# pree2=c()
+	# for (i in 1:ncol(gt.test)) {
+		# pree2[i]=sum(out$beta*out$r2*gt.test[,i])
+	# }
+	# plot(pree2~traits.test[,1],main="simple betas * R2")
+	# mtext(round(cor(pree2,tt),2))
 	
 	pree3=c()
-	for (i in 1:ncol(gt.test.p)) {
-		pree3[i]=sum(out$beta*gt.test.p[,i])
+	for (i in 1:ncol(gt.test)) {
+		pree3[i]=sum(out$beta*gt.test[,i])
 	}
 	plot(pree3~traits.test[,1],main="simple betas")
 	mtext(round(cor(pree3,tt),2))
