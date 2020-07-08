@@ -1,4 +1,5 @@
 if (length(commandArgs(trailingOnly=TRUE))<1) {
+	options(warning.length=8000)
 	stop("
 
 Compiles RDA_GWAS.R results, for all chromosomes, for a series of hold-out replicates.
@@ -34,11 +35,11 @@ outfile=[filename]   output file name
 
 Mikhail Matz, matz@utexas.edu, July 2020
 
-")
+") }
 
 infile=grep("in=",commandArgs())
 if (length(infile)==0) { stop ("specify list of replicates (in=filename)\nRun script without arguments to see all options\n") }
-infile=sub("in=","", commandArgs()[gtfile])
+infile=sub("in=","", commandArgs()[infile])
 
 traits =grep("traits=",commandArgs())
 if (length(traits)==0) { stop ("specify traits file (traits=filename)\nRun script without arguments to see all options\n") }
@@ -174,7 +175,7 @@ for (r in 1:length(reps)){
 		out$beta.rr=betas
 		out$intercept.rr=intercept
 	}
-	save(out,gt.s,gt.test,sample.scores,file=paste(rr,outfile,sep="_"))
+	save(out,gt.s,gt.test,sample.scores,file=paste(rr,"_",outfile,".RData",sep=""))
 
 #------------- predicting 
 
