@@ -94,13 +94,13 @@ gnets=function(dat,trait,alpha=0.5) {
 # for r in `seq 1 10`;do ls *bl_rep${r}_10.RData >rep${r}_bl; done
 # ls rep*_bl >reps_bl
 
- setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/")
-      infile = "reps_rf"
-      traits = "rf.traits"
-      outfile="rf7_noRerun_mz4.RData"
-	  forcePred=FALSE
-	  forceAlpha=-1
-  	  runGLMnet=FALSE
+ # setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/")
+      # infile = "reps_rf"
+      # traits = "rf.traits"
+      # outfile="rf7_noRerun_mz4.RData"
+	  # forcePred=FALSE
+	  # forceAlpha=-1
+  	  # runGLMnet=FALSE
 
 reps=scan(infile,what="character")		
 traits=read.table(traits,header=T,stringsAsFactors=F)
