@@ -94,13 +94,13 @@ gnets=function(dat,trait,alpha=0.5) {
 # for r in `seq 1 10`;do ls *bl_rep${r}_10.RData >rep${r}_bl; done
 # ls rep*_bl >reps_bl
 
- # setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/")
-      # infile = "reps_rf"
-      # traits = "rf.traits"
-      # outfile="rf7_noRerun_mz4.RData"
-	  # forcePred=FALSE
-	  # forceAlpha=-1
-  	  # runGLMnet=FALSE
+  # setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/")
+        # infile = "reps_rf"
+        # traits = "rf.traits"
+        # outfile="rf11_noRerun"
+	    # forcePred=FALSE
+	    # forceAlpha=-1
+  	    # runGLMnet=FALSE
 
 reps=scan(infile,what="character")		
 traits=read.table(traits,header=T,stringsAsFactors=F)
@@ -180,8 +180,9 @@ for (r in 1:length(reps)){
 		gt.test=gt.s 
 		traits.test=traits[colnames(gt.s),]
 		}
-	tt=as.numeric(traits.test[,1])
-	tt[which(is.na(tt))]=mean(tt,na.rm=T)
+	goodst=row.names(traits.test)[which(!is.na(traits.test[,1]))]
+	tt=as.numeric(traits.test[goodst,1])
+	gt.test=gt.test[,goodst]
 	
 	pred.rr=c();pred.lm=c()
 	for (z in 1:length(zscan)) {
@@ -191,7 +192,7 @@ for (r in 1:length(reps)){
 			pred.lm[i]=sum(out$beta[abs(out$zscore)>= minz]*gt.test[abs(out$zscore)>= minz,i])
 		}	
 		preds=data.frame(cbind(rr=pred.rr,lm=pred.lm,true=tt))
-		row.names(preds)=row.names(traits.test)
+		row.names(preds)=goodst
 		preds$rep=rr
 #		zr[[z]][[r]]=append(zr[[z]],preds[[r]])
 		zr[[z]][[r]]=preds
@@ -203,7 +204,7 @@ zr2=c();Ns=c()
 for (z in 1:length(zscan)) {
 	Ns=append(Ns,sum(abs(out$zscore)>=zscan[z]))
 	allpreds=do.call(rbind,zr[[z]])
-	zr2=append(zr2,cor(allpreds$rr,allpreds$true)^2)
+	zr2=append(zr2,cor(allpreds$lm,allpreds$true)^2)
 }
 #plot(zr2~zscan)
 plot(zr2~Ns,xlab="N(SNPs)",ylab="prediction R2")
