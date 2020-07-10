@@ -125,12 +125,11 @@ for (r in 1:length(reps)){
 				goods.test=names(gt.test) 
 				traits.test=data.frame(traits[goods.test,])
 				traits.use=data.frame(traits[goods.use,])
-				
+				row.names(traits.test)=goods.test
+				colnames(traits.test)=tnames			
 			} else { 
 				traits.test=traits.use=traits
 			}
-			row.names(traits.test)=goods.test
-			colnames(traits.test)=tnames
 		}
 		if(goods.test[1]==0) { gt.test=gt.s	}	
 		gts.test[[f]]=gt.test
