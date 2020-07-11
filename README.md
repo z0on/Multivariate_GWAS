@@ -66,7 +66,7 @@ Also, unless *plots=FALSE* option is given, there will be *_plots.pdf* files gen
 * q-q plot of SNP scores along CAP1 compared to SNP scores along a very high-order MDS representing noise. Departure upwards from the red line at the top right corner indicates positive signal, departure downwards in the lower left corner - negative signal.
 
 ![snp scores](snp_ordination.png)
-* SNP scored in the same ordination space: CAP1 (trait) vs MDS100 (noise). Colored rings are increasing z-scores. The idea is to check if the cloud is more extended / has more outliers along CAP1 compared to MDS100.
+* SNP scores in the same ordination space: CAP1 (trait) vs MDS100 (noise). Colored rings are increasing z-scores, the outmost ring iz z > 5. The idea is to check if the cloud is more extended / has more outliers along CAP1 compared to MDS100.
 
 ![raw manhattan](raw_mahnattan.png)
 * Manhattan plot of all analyzed sites. Adjusted p-values are supposed to be genome-wide, if the total number of analyzed SNPs (across the whole genome) is supplied to *RDA_GWAS.R* as *nsites=1234567* argument.
