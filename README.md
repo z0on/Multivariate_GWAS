@@ -75,7 +75,7 @@ Also, unless *plots=FALSE* option is given, there will be *_plots.pdf* files gen
 ![raw manhattan](raw_mahnattan.png)
 * Manhattan plot of all analyzed sites. Adjusted p-values are supposed to be genome-wide, if the total number of analyzed SNPs (across the whole genome) is supplied to *RDA_GWAS.R* as *nsites=1234567* argument.
 
-![pruned manhattan](pruned_mahnttan.png)
+![pruned manhattan](pruned_mahnattan.png)
 * Manhattan plot for distace-pruned top-zscore SNPs. Pruning follows the same procedure as LD-pruning but with distances instead of LD (LD stuff is currently in the works). In short, the top z-score SNP is chosen first, then the next one is the one that has highest z-score at least *prune.dist* away from the first one, and so on. *prune.dist* is the argument to *RDA_GWAS.R*, default is 50000.
 
 To compile all chromosomes together and plot genome-wide manhattan plot (only uses contigs with "chr" in the name!):
