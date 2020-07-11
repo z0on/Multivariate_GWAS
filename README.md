@@ -52,16 +52,60 @@ OUTN=`echo $CHR | perl -pe 's/^([\w\d]+)\\..+/$1/'`;
 echo "Rscript RDA_GWAS.R gt=$CHR covars=mds2 traits=pd.traits gdist.samples=bams.qc gdist=zz8.ibsMat outfile=${OUTN}_pd.RData">>allchroms;
 done
 
-# examine per-chomosome *pdf files - they would contain sample and SNP ordination plots, q-q plot to show if there is any signal, manhattan plots of all and chosen SNPs (after distance-pruning)
 # execute all commands in allchroms
 
+# examine per-chomosome *pdf files - they would contain:
+#   - sample and SNP ordination plots, 
+#   - q-q plot to show if there is any signal, 
+#   -manhattan plots of all and chosen SNPs (after distance-pruning)
+
+
 # to compile all chromosomes together and plot genome-wide manhattan plot (only uses contigs with "chr" in the name!):
-# list all per-chromosome output files in a text file:
 ls *_pd.RData >pds
 Rscript compile_chromosomes.R in=pds
 
 ```
-Running this with hold-out samples is a bit more involved. 
+## Run with hold-out samples ##
+This is a bit more involved. First, we need to list hold-out sample names in a file. We might wish to make many such files listing randomly picked hold-out samples. So we will have a bunch of sample-listing files named, for example, *rep25_10* - which would be 25th replicate of witholding 10 samples. We might also need to make replicate-specific tables of covariates, especially if they include unconstrained MDSes - those we are supposed to compute based on the dataset *without the hold-out samples*. See *write_holdout_reps.R* for example R code (spagetty warning). 
+
+Then we basically need to run the above code for each of the replicates, with additional hold.out=[filename] argument to *RDA_GWAS.R* . Here is one way to do this with bash looping. Note that in this case we are setting up a run with 50 hold-out replicates, with replicate-specific covariate files named like *mds2_25_10* (to correspond with the hold-out samples filenames like *rep25_10*). Note that we do NOT need to subset our genotypes, genetic distances, or traits tables - this will happen automatically, just supply full files for all samples.
+
+```bash
+>pdd
+for R in `seq 1 50`; do
+REP=rep${R}_10;
+MDS=mds2_${R}_10;
+for CHR in `ls *postAlleles.gz`; do
+OUTN=`echo $CHR | perl -pe 's/.+(chr\d+).+/$1/'`;
+echo "Rscript RDA_GWAS.R gt=$CHR covars=$MDS traits=pd.traits gdist.samples=bams.qc plots=FALSE gdist=zz8.ibsMat hold.out=$REP outfile=${OUTN}_pd_${REP}.RData">>pdd;
+done;
+done
+```
+Executing all commands in *pdd* (much preferrably in parallel!) will give us 50 hold-out runs per each chromosome. To sort out this mess, first we need to compile results for all chromosomes for each hold-out replicate, using *compile_chromosomes.R*:
+```bash
+>compd
+for r in `seq 1 50`; do
+ls *pd_rep${r}_*.RData >rep${r}_pd; 
+echo "Rscript compile_chromosomes.R in=rep${r}_pd plotManhattan=FALSE">>compd;
+done
+```
+Executing all commands in *compd* gives us per-replicate, whole-genome results. Each output file includes genotypes for hold-out samples, not included in the main analysis. The last stage is to see how well the trait values in these samples are predicted based on their polygenic scores, and summarize the results of all replicates in a nice plot: 
+```bash
+ls rep*_pd.RData >reps50
+compile_replicates.R in=reps50 traits=pd.traits
+```
+Note that we need to supply argument *traits* again, pointing to the same table as we were using for *RDA_GWAS.R*
+
+This will generate a plot *reps50.pdf* looking somewhat like this:
+
+![predictions](pd_predictions.png)
+
+where::
+  panel 1: scan through z-score cutoffs for best predictions (using lm betas)
+  panel 2: predictions for hold-out samples based on lm betas
+  panel 3: predictions based on regularized betas (glmnet)
+  panel 4: comparison of simple and regularized predictions
+
 
 Mikhail Matz, matz@utexas.edu, July 2020
 
