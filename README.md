@@ -7,7 +7,11 @@
 - naturally generates empirical null distribution to detect true signal and calculate p-values
 - several correlated traits can be used together as a "compound trait"
 
-The key script here is **RDA_GWAS.R**. The genotype file needed to run the examples, *chr14.postAlleles.gz*, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . 
+The key script here is **RDA_GWAS.R**. Below is the "help" page it would print if run without any arguments. The genotype file needed to run these, *chr14.postAlleles.gz*, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . 
+
+This project is based on the idea of using constrained ordination to look for genotype-environment associations, presented in papers by Brenna R. Forester et al: 
+https://doi.org/10.1111/mec.13476
+https://doi.org/10.1111/mec.14584
 
 #### RDA_GWAS.R: Arguments (things we need to run this method)
 > **Note:** all tables must be space-delimited, and can be compressed .gz files.
@@ -24,7 +28,7 @@ The key script here is **RDA_GWAS.R**. The genotype file needed to run the examp
 
 **hold.out=[filename]**  File listing sample names to hold out from the whole analysis for subsequent testing. Omit this if working with all samples
 
-### other RDA_GWAS.R arguments
+#### other RDA_GWAS.R arguments
 
 **outfile=[filename]**  Output file name.
 
@@ -62,9 +66,9 @@ Rscript compile_chromosomes.R in=pds
 
 ```
 ## Run with hold-out samples ##
-This is a bit more involved. First, we need to list hold-out sample names in a file. We might wish to make many such files listing randomly picked hold-out samples. So we will have a bunch of sample-listing files named, for example, *rep10_25* - which would be 10th replicate of witholding 25 samples. We might also need to make replicate-specific tables of covariates, especially if they include unconstrained MDSes - those we are supposed to compute based on the dataset *without the hold-out samples*. See *write_holdout_reps.R* for example R code (spagetty warning). 
+This is a bit more involved. First, we need to list hold-out sample names in a file. We might wish to make many such files listing randomly picked hold-out samples. So we will have a bunch of sample-listing files named, for example, *rep25_10* - which would be 25th replicate of witholding 10 samples. We might also need to make replicate-specific tables of covariates, especially if they include unconstrained MDSes - those we are supposed to compute based on the dataset *without the hold-out samples*. See *write_holdout_reps.R* for example R code (spagetty warning). 
 
-Then we basically need to run the above code for each of the replicates, with additional hold.out=[filename] argument to *RDA_GWAS.R* . Here is one way to do this with bash looping. Note that in this case we are setting up a run with 50 hold-out replicates, with replicate-specific covariate files named like *mds2_10_25* (to correspond with the hold-out samples filenames like *rep10_25*). Note that we do NOT need to subset our genotypes, genetic distances, or traits tables - this will happen automatically, just supply full files for all samples.
+Then we basically need to run the above code for each of the replicates, with additional hold.out=[filename] argument to *RDA_GWAS.R* . Here is one way to do this with bash looping. Note that in this case we are setting up a run with 50 hold-out replicates, with replicate-specific covariate files named like *mds2_25_10* (to correspond with the hold-out samples filenames like *rep25_10*). Note that we do NOT need to subset our genotypes, genetic distances, or traits tables - this will happen automatically, just supply full files for all samples.
 
 ```bash
 >pdd
@@ -102,10 +106,40 @@ Where:
 * panel 3: predictions based on regularized betas (glmnet)
 * panel 4: comparison of simple and regularized predictions
 
-### Where does it come from?
-This project is based on the idea of using constrained ordination to look for genotype-environment associations, presented in papers by Brenna R. Forester et al: 
-https://doi.org/10.1111/mec.13476
-https://doi.org/10.1111/mec.14584
+## Appendix
+#### How to get genotypes (posterior minor allele counts) and genetic distance matrix (IBS) from ANGSD
+
+Assume we have a file *bams.qc* listing our (indexed) bam files, from which we have already tossed all the samples that are severely under-sequenced, clonal, wrong species, or just look weird a PCoA plot. We have already decided on the genotyping rate cutoff (-minInd argument to angsd), which is the number of individuals in which a locus must be represented by at least one read (idealy it shoudl eb set to 75-80% of total number of samples). We are going after variants of minor allele 0.05 and higher (-minMaf 0.05): 
+```bash
+FILTERS="-uniqueOnly 1 -remove_bads 1 -skipTriallelic 1 -minMapQ 30 -minQ 20 -dosnpstat 1 -doHWE 1 -maxHetFreq 0.5 -sb_pval 1e-5 -hetbias_pval 1e-5 -minInd 152 -snp_pval 1e-5 -minMaf 0.05 "
+TODO="-doMajorMinor 1 -doMaf 1 -doCounts 1 -makeMatrix 1 -doIBS 1 -doGeno 8 -doPost 1"
+angsd -b bams.qc -GL 1 $FILTERS $TODO -P 12 -out zz8
+```
+>If this runs out of memory, try reducing *-P* , all the way to *-P 1*.
+
+The output file *zz8.ibsMat* is the genetic distances matrix (identity-by-state) that we can use for GWAS here. The file *zz8.geno.gz* contains posterior genotypes, but needs to be massaged a bit before we can use it.
+
+First, let's unarchive it and split by chromosome:
+```bash
+zcat zz8.geno.gz | awk -F, 'BEGIN { FS = "\t" } ; {print > $1".split.geno"}'
+```
+If you have some short contigs in addition to chromosomes, you might wish to concatenate them together into a separate *unplaced.split.geno* file before proceeding. If your genome is highly fragmented, pre-concatenate it into "fake chromosomes" before mapping (see [concat_fasta.pl](https://github.com/z0on/2bRAD_denovo/blob/master/concatFasta.pl) ).
+
+Now, we need to calculate posterior number of minor alleles:
+```bash
+>bychrom
+for GF in *.split.geno; do
+echo "awk '{ printf \$1\"\\t\"\$2; for(i=4; i<=NF-1; i=i+3) { i2=i+1; printf \"\\t\"\$i+2*\$i2} ; printf \"\\n\";}' $GF > ${GF/.split.geno/}.postAlleles" >>bychrom
+done
+```
+Execute all lines in *bychrom*, and we got ourselves genotype data tables.
+
+You might wish to compress them, for tidyness, although it is not necessary for *RDA_GWAS.R*:
+```bash
+for F in *.postAlleles;do gzip -f $F;done
+```
+
+
 
 
 Mikhail Matz, matz@utexas.edu, July 2020
