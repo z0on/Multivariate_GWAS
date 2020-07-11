@@ -2,34 +2,34 @@ if (length(commandArgs(trailingOnly=TRUE))<1) {
 	options(warning.length=8000)
 	stop("
 
-Compiles RDA_GWAS.R results, for all chromosomes, for a series of hold-out replicates.
+Compiles RDA_GWAS.R results for all chromosomes, for a single hold-out replicate (or full sample set).
+Use compile_replicates.R after this script to summarize prediction accuracy in hold-out replicates.
 
 Arguments: 
 
-in=[filename]       List of files each listing per-chromosome RDA_GWAS.R outputs (.RData file names) 
+in=[filename]        List of per-chromosome RDA_GWAS.R outputs (.RData file names) 
                      for the same hold-out replicate. 
                      
-                     For example, if we have 100 hold-out replicates, and per-chromosome output files 
+                     For example, if we have 50 hold-out replicates, and per-chromosome output files 
                      from RDA_GWAS.R have rep1_,rep2_,...rep10_ in their filenames, then
                      
-                        for r in `seq 1 100`;do ls *rep${r}_*.RData >rep${r}_files; done
-                        ls rep*_files >allreps
-                     
-                      and use in=allreps in the call to this script.
+                       >comp
+                       for r in `seq 1 50`; do
+                       ls *rep${r}_*.RData >rep${r}_files; 
+                       echo \"Rscript compile_chromosomes.R in=rep${r}_files\">>comp;
+                       done
+ 
+                       and then run everything in comp.
 
-traits=[filename]    Tab-delimited table of trait(s), same as used for RDA_GWAS.R Should contain
-                     all samples, including the hold-out ones. Predictions will be plotted against 
-                     the first column in this table.
-                     
-runGLMnet=TRUE       Whether to re-run elastic net on compiled data for each replicate.
+runGLMnet=TRUE       Whether to re-run elastic net on compiled data.
 
-forcePred=FALSE      forces back-prediction of the same dataset (for sanity check)
+plotManhattan=TRUE   Whether to plot the whole-genome Manhattan plot (for all SNPs with z-score > 3).
 
 forceAlpha=-1        if non-negative, sets alpha parameter for glmnet regression (0 - ridge, 1 - lasso)
                      otherwise alpha will be chosen automatically based on back-prediction accuracy.
 
-outfile=[filename]   output file name
-                   
+Output: RData bundle containing data frame \"out\" (zscores, pvalues, betas.lm, betas.rr), genotypes for \'use\' set (gt.use) 
+genotypes for held-out \'test\' set (gt.test), traits (traits.use, traits.test), and sample scores for the \'use\' set                 
 
 Mikhail Matz, matz@utexas.edu, July 2020
 
@@ -39,32 +39,18 @@ infile=grep("in=",commandArgs())
 if (length(infile)==0) { stop ("specify list of replicates (in=filename)\nRun script without arguments to see all options\n") }
 infile=sub("in=","", commandArgs()[infile])
 
-traits =grep("traits=",commandArgs())
-if (length(traits)==0) { stop ("specify traits file (traits=filename)\nRun script without arguments to see all options\n") }
-traits =sub("traits=","", commandArgs()[traits])
-
-minz =grep("minz=",commandArgs())
-if(length(minz)>0) { nsites=as.numeric(sub("minz=","", commandArgs()[minz])) } else { minz=2 }
-
-outfile =grep("outfile=",commandArgs())
-if (length(outfile)==0) { stop ("specify output file name (outfile=filename)\nRun script without arguments to see all options\n") }
-outfile =sub("outfile=","", commandArgs()[outfile])
-
 runGLMnet=TRUE
 if(length(grep("runGLMnet=F",commandArgs()))>0) { runGLMnet=FALSE } 
 
-forcePred=FALSE
-if(length(grep("forcePred=T",commandArgs()))>0) { forcePred=TRUE } 
+plotManhattan=TRUE
+if(length(grep("plotManhattan=F",commandArgs()))>0) { plotManhattan=FALSE } 
 
 forceAlpha=-1
 fa=grep("forceAlpha=",commandArgs())
 if(length(fa)>0) { forceAlpha=as.numeric(sub("forceAlpha=","", commandArgs()[fa])) } 
 
-# require(vegan)
-# require(ggplot2)
 require(glmnet)
-require(scales)
-require(RColorBrewer)
+require(ggplot2)
 
 # function to test the accuracy of prediction for a specific alpha
 gnets=function(dat,trait,alpha=0.5) {
@@ -87,143 +73,82 @@ gnets=function(dat,trait,alpha=0.5) {
 	return(list(r2,trains,preds))	
 }
 
-#------------- reading and aligning data
 
-# for 10 replicates:
-# mv ../chr*bl_rep*_*RData .
-# for r in `seq 1 10`;do ls *bl_rep${r}_10.RData >rep${r}_bl; done
-# ls rep*_bl >reps_bl
-
-  # setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/")
-        # infile = "reps_rf"
-        # traits = "rf.traits"
-        # outfile="rf11_noRerun"
-	    # forcePred=FALSE
-	    # forceAlpha=-1
-  	    # runGLMnet=FALSE
-
-reps=scan(infile,what="character")		
-traits=read.table(traits,header=T,stringsAsFactors=F)
-row.names(traits)=traits$sample
-traits$sample=NULL
-tnames=names(traits)
-
-rr=reps[1]
-zscan=seq(2,5,0.1);zr=vector("list", length = length(zscan))
-for (r in 1:length(reps)){
-	rr=reps[r]
+# setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/")
+  # infile = "rep2_rf"
+ # # forceAlpha=-1
+  # runGLMnet=FALSE
+# plotManhattan=TRUE
 
 # ----- reading all chromosome data
-	infiles=scan(rr,what="character")
-	gts.test=c();gts.use=c();outs=c()
-	for (f in 1:length(infiles)) {
-		ll=load(infiles[f])
-		if(f==1) {
-			goods.test=0
-			goods.use=names(gt.s)
-			if(length(gt.test)>1) { 
-				goods.test=names(gt.test) 
-				traits.test=data.frame(traits[goods.test,])
-				traits.use=data.frame(traits[goods.use,])
-				row.names(traits.test)=goods.test
-				colnames(traits.test)=tnames			
-			} else { 
-				traits.test=traits.use=traits
-			}
-		}
-		if(goods.test[1]==0) { gt.test=gt.s	}	
-		gts.test[[f]]=gt.test
-		gts.use[[f]]=gt.s
-		outs[[f]]=out
-	}
-	out=do.call(rbind,outs)
-	gt.test=do.call(rbind,gts.test)
-	gt.s=do.call(rbind,gts.use)
 
-#------- running elastic net
-		
-	if (runGLMnet) {	
-		# screening through alpha parameters
-		if(forceAlpha>=0) { alpha=forceAlpha } else {
-			message("rep ",r, ": glmnet: screening alphas...")
-			as=c()
-			for (a in seq(0,1,0.2)) {
-				message("     ",a)
-				r2s=c()
-				for (i in 1:5) {
-					p=gnets(t(gt.s),sample.scores,alpha=a)
-					r2s=append(r2s,p[[1]])
-				}
-				as=data.frame(cbind(as,r2s))
-			}
-			meanr2=apply(as,2,mean)
-			alpha=seq(0,1,0.2)[which(meanr2==max(meanr2))]
-			message("rep ",r, ": alpha=",alpha)
-		}
+infiles =scan(infile,what="character")
+gts.test=list()
+gts.use=list()
+outs=list()
+manhs=list()
 
-		net.CV = cv.glmnet(t(gt.s), sample.scores, nfolds=10,alpha=alpha,family="gaussian")
-		lambda = net.CV$lambda.min
-		model = glmnet(t(gt.s), sample.scores, family="gaussian", alpha=alpha, nlambda=100)
-		betas=coef(model,s=lambda)[,1][-1]
-		intercept=coef(model,s=lambda)[,1][1]
-		length(betas)
-		
-		out$beta.rr=betas
-		out$intercept.rr=intercept
-	}
-	save(out,gt.s,gt.test,sample.scores,file=paste(rr,"_",outfile,".RData",sep=""))
-
-#------------- predicting - scanning through z-score cutoffs
-
-	if(forcePred) { 
-		gt.test=gt.s 
-		traits.test=traits[colnames(gt.s),]
-		}
-	goodst=row.names(traits.test)[which(!is.na(traits.test[,1]))]
-	tt=as.numeric(traits.test[goodst,1])
-	gt.test=gt.test[,goodst]
-	
-	pred.rr=c();pred.lm=c()
-	for (z in 1:length(zscan)) {
-		minz=zscan[z]
-		for (i in 1:ncol(gt.test)) {
-			pred.rr[i]=sum(out$beta.rr[abs(out$zscore)>= minz]*gt.test[abs(out$zscore)>= minz,i])+out$intercept[1]
-			pred.lm[i]=sum(out$beta[abs(out$zscore)>= minz]*gt.test[abs(out$zscore)>= minz,i])
-		}	
-		preds=data.frame(cbind(rr=pred.rr,lm=pred.lm,true=tt))
-		row.names(preds)=goodst
-		preds$rep=rr
-#		zr[[z]][[r]]=append(zr[[z]],preds[[r]])
-		zr[[z]][[r]]=preds
-	}
+for (f in 1:length(infiles)) {
+	ll=load(infiles[f])
+	gts.test[[f]]=gt.test
+	gts.use[[f]]=gt.s
+	outs[[f]]=out
+	manhs[[f]]=manh
 }
-pdf(paste(outfile,".pdf",sep=""),width=11,height=3.2)
-par(mfrow=c(1,4))
-zr2=c();Ns=c()
-for (z in 1:length(zscan)) {
-	Ns=append(Ns,sum(abs(out$zscore)>=zscan[z]))
-	allpreds=do.call(rbind,zr[[z]])
-	zr2=append(zr2,cor(allpreds$lm,allpreds$true)^2)
-}
-#plot(zr2~zscan)
-plot(zr2~Ns,xlab="N(SNPs)",ylab="prediction R2")
-lines(zr2~Ns)
+out=do.call(rbind,outs)
+gt.test=do.call(rbind,gts.test)
+gt.s=do.call(rbind,gts.use)
+manh=do.call(rbind,manhs)
 
-best=which(zr2==max(zr2))
-allpreds=do.call(rbind,zr[[best]])
+#------- running elastic net on combined data
+		
+if (runGLMnet) {	
+	# screening through alpha parameters
+	if(forceAlpha>=0) { alpha=forceAlpha } else {
+		message("glmnet: screening alphas...")
+		as=c()
+		for (a in seq(0,1,0.2)) {
+			message("     ",a)
+			r2s=c()
+			for (i in 1:5) {
+				p=gnets(t(gt.s),sample.scores,alpha=a)
+				r2s=append(r2s,p[[1]])
+			}
+			as=data.frame(cbind(as,r2s))
+		}
+		meanr2=apply(as,2,mean)
+		alpha=seq(0,1,0.2)[which(meanr2==max(meanr2))]
+		message("chosen alpha=",alpha)
+	}
+
+	net.CV = cv.glmnet(t(gt.s), sample.scores, nfolds=10,alpha=alpha,family="gaussian")
+	lambda = net.CV$lambda.min
+	model = glmnet(t(gt.s), sample.scores, family="gaussian", alpha=alpha, nlambda=100)
+	betas=coef(model,s=lambda)[,1][-1]
+	intercept=coef(model,s=lambda)[,1][1]
 	
-getPal = colorRampPalette(brewer.pal(9, "Set1"))
-repColors= getPal(length(reps))
-N=Ns[best]
-jitter=0.01*max(allpreds$true)
-allpreds$re.lm=rescale(allpreds$lm,range(allpreds$true))+rnorm(nrow(allpreds),0,jitter)
-allpreds$re.rr=rescale(allpreds$rr,range(allpreds$true))+rnorm(nrow(allpreds),0,jitter)
-allpreds$re.true=allpreds$true+rnorm(nrow(allpreds),0,jitter)
+	out$beta.rr=betas
+	out$intercept.rr=intercept
+}
 
-plot(re.lm~re.true,allpreds,main=paste("z:",zscan[best]," Nsnps:",N," simple betas"),col= repColors,pch=16)
-mtext(round(cor(allpreds$lm,allpreds$true)^2,2))
-plot(re.rr~re.true,allpreds,main=paste("z:",zscan[best]," Nsnps:",N," rr betas"),col= repColors,pch=16)
-mtext(round(cor(allpreds$rr,allpreds$true)^2,2))
-plot(lm~rr,allpreds,col= repColors,main="prediction comparison",pch=16)
-dev.off()
+save(out,gt.s,gt.test,manh,file=paste(infile,".RData",sep=""))
 
+#--------------- Manhattan plot (only for "chr" contigs)
+
+if(plotManhattan) {
+		pdf(paste(infile,"_manhattan.pdf",sep=""),width=15,height=3.5)
+		manh$pos.Mb=manh$pos/1e+3
+		mh=manh[abs(manh$zscore)>3,]
+		mh=mh[grep("chr",mh$chrom),]
+		mh$chrN=gsub("\\D","",mh$chrom)
+		mh$chrom=factor(mh$chrom,levels=unique(mh$chrom)[order(as.numeric(unique(mh$chrN)))])
+		pp=ggplot(mh,aes(pos.Mb,logp))+
+			geom_point(shape = 21, colour = "grey20", aes(size=logp.adj,fill=zscore))+
+		    scale_size_continuous(limits=c(0,3),breaks=c(0.3,0.6,1,1.3,2),labels=c(0.5,0.25,0.1,0.05,1e-2))+
+			scale_fill_gradient(low="cyan3",high="coral")+
+			theme_bw() + labs(size = "p.adj")+theme(axis.text.x=element_text(angle=45, hjust=1))+
+			ylim(min(mh$logp),max(c(7,max(mh$logp))))+ggtitle(paste(infile,"z > 3"))+
+			xlab("position,Mb")+facet_grid(~chrom,scale="free_x",space="free_x")
+		plot(pp)
+		dev.off()
+}
