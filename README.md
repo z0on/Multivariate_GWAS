@@ -7,11 +7,7 @@
 - naturally generates empirical null distribution to detect true signal and calculate p-values
 - several correlated traits can be used together as a "compound trait"
 
-The key script here is **RDA_GWAS.R**. Below is the "help" page it would print if run without any arguments. The genotype file needed to run these, *chr14.postAlleles.gz*, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . 
-
-This project is based on the idea of using constrained ordination to look for genotype-environment associations, presented in papers by Brenna R. Forester et al: 
-https://doi.org/10.1111/mec.13476
-https://doi.org/10.1111/mec.14584
+The key script here is **RDA_GWAS.R**. The genotype file needed to run the examples, *chr14.postAlleles.gz*, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . 
 
 #### RDA_GWAS.R: Arguments (things we need to run this method)
 > **Note:** all tables must be space-delimited, and can be compressed .gz files.
@@ -28,7 +24,7 @@ https://doi.org/10.1111/mec.14584
 
 **hold.out=[filename]**  File listing sample names to hold out from the whole analysis for subsequent testing. Omit this if working with all samples
 
-#### other RDA_GWAS.R arguments
+### other RDA_GWAS.R arguments
 
 **outfile=[filename]**  Output file name.
 
@@ -105,6 +101,11 @@ Where:
 * panel 2: predictions for hold-out samples based on lm betas
 * panel 3: predictions based on regularized betas (glmnet)
 * panel 4: comparison of simple and regularized predictions
+
+### Where does it come from?
+This project is based on the idea of using constrained ordination to look for genotype-environment associations, presented in papers by Brenna R. Forester et al: 
+https://doi.org/10.1111/mec.13476
+https://doi.org/10.1111/mec.14584
 
 
 Mikhail Matz, matz@utexas.edu, July 2020
