@@ -62,10 +62,8 @@ Also, unless *plots=FALSE* option was given, there will be *_plots.pdf* files ge
 ![sample ordination](sample_ordination.png)
 * constrained ordination plot for samples, and the trait(s) vector(s). The analysis uses sample scores along the first constrained axis, CAP1, but multiple correlated traits can be used to define it.
 
-
 ![qq plot](qqplot.png)
-* q-q plot of SNP scores along CAP1 compared to SNP scores along a very high-order MDS representing noise. Departure upwards from the red line at the top right corner indicates positive signal, departure downwards in the lower left corner - negative signal. IN this case, these is positive signal, but no negative signal.
-
+* q-q plot of SNP scores along CAP1 compared to SNP scores along a very high-order MDS representing noise. Departure upwards from the red line at the top right corner indicates positive signal, departure downwards in the lower left corner - negative signal. In this case these is some positive signal, but no negative signal.
 
 ![snp scores](snp_ordination.png)
 * SNP scores in the same ordination space: CAP1 (trait) vs MDS100 (noise). Colored rings are increasing z-scores of distamnce from 0, the outmost ring iz z > 5. The idea is to check if the cloud is more extended / has more outliers along CAP1 compared to MDS100.
@@ -74,12 +72,10 @@ Also, unless *plots=FALSE* option was given, there will be *_plots.pdf* files ge
 ![raw manhattan](raw_mahnattan.png)
 * Manhattan plot of all analyzed sites. Adjusted p-values are supposed to be genome-wide, if the total number of analyzed SNPs (across the whole genome) was supplied to *RDA_GWAS.R* as *nsites=1234567* argument.
 
-
 ![pruned manhattan](pruned_manhattan.png)
 * Manhattan plot for distace-pruned top-zscore SNPs. Pruning follows the same procedure as LD-pruning but with distances instead of LD (LD stuff is currently in the works). In short, the top z-score SNP is chosen first, then the next one is the one that has highest z-score at least *prune.dist* away from the first one, and so on. *prune.dist* is the argument to *RDA_GWAS.R*, default is 50000.
 
-
-To compile all chromosomes together and plot genome-wide manhattan plot (only uses contigs with "chr" in the name!):
+To combine all chromosomes together and plot genome-wide manhattan plot (only uses contigs with "chr" in the name!):
 ```bash
 ls *_pd.RData >pds
 Rscript compile_chromosomes.R in=pds
