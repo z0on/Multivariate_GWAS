@@ -100,15 +100,11 @@ This will generate a plot *reps50.pdf* looking somewhat like this:
 
 ![predictions](pd_predictions.png)
 
-where:
-
-panel 1: scan through z-score cutoffs for best predictions (using lm betas)
-
-panel 2: predictions for hold-out samples based on lm betas
-
-panel 3: predictions based on regularized betas (glmnet)
-
-panel 4: comparison of simple and regularized predictions
+Where:
+* panel 1: scan through z-score cutoffs for best predictions (using lm betas)
+* panel 2: predictions for hold-out samples based on lm betas
+* panel 3: predictions based on regularized betas (glmnet)
+* panel 4: comparison of simple and regularized predictions
 
 
 Mikhail Matz, matz@utexas.edu, July 2020
