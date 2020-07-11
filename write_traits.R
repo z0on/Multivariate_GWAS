@@ -17,12 +17,15 @@ head(bleach)
 write.table(bleach,file="blscore.traits",quote=F,row.names=F)
 
 
-load("rda_covariates.RData")
+load("~/Dropbox/amil_RDA_association_jun2020/rda_covariates.RData")
 pp0=capscale(ibs~1)
-mds=pp0$CA$u[,1:7]
+mds=pp0$CA$u[,1:2]
 mds=cbind(sample=row.names(mds),mds)
 head(mds)
-write.table(mds,file="mds7",quote=F,row.names=F)
+write.table(mds,file="mds2",quote=F,row.names=F)
+
+pdmds2=merge(pd,mds,by="sample")
+write.table(pdmds2,file="pdmds2",quote=F,row.names=F)
 
 
 covars=read.table("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/simple.covars",header=T,stringsAsFactors=F)
