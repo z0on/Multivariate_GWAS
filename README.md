@@ -7,7 +7,7 @@
 - naturally generates empirical null distribution to detect true signal and calculate p-values
 - several correlated traits can be used together as a "compound trait"
 
-The key script here is **RDA_GWAS.R**. The genotype file needed to run example code below, *chr14.postAlleles.gz*, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . 
+The key script here is **RDA_GWAS.R**. Below is the "help" page it would print if run without any arguments. The genotype file needed to run these, *chr14.postAlleles.gz*, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . 
 
 This project is based on the idea of using constrained ordination to look for genotype-environment associations, presented in papers by Brenna R. Forester et al: 
 https://doi.org/10.1111/mec.13476
@@ -51,19 +51,34 @@ for CHR in `ls *postAlleles.gz`; do
 OUTN=`echo $CHR | perl -pe 's/^([\w\d]+)\\..+/$1/'`;
 echo "Rscript RDA_GWAS.R gt=$CHR covars=mds2 traits=pd.traits gdist.samples=bams.qc gdist=zz8.ibsMat outfile=${OUTN}_pd.RData">>allchroms;
 done
+```
+Execute all commands in *allchroms* (preferably in parallel)
 
-# execute all commands in allchroms
+This will generate RData bundles, one for each chromosome, containing the following R objects:
+* *out* : results table for pruned SNPs containing zscores, pvalues, betas (for simple linear model and elastic net regression), and r-squares for lm regressions;
+* *gt.s* : genotypes of chosen SNPs;
+* *gt.test* : genotypes of hold-out samples (if any) at the selected SNPs;
+* *manh* : manhattan plot data (zscores, pvalues) for ALL analyzed sites;
+* *sample.scores* : sample scores along the first constrained ordination axis.
 
-# examine per-chomosome *pdf files - they would contain:
-#   - sample and SNP ordination plots, 
-#   - q-q plot to show if there is any signal, 
-#   -manhattan plots of all and chosen SNPs (after distance-pruning)
+Also, unless *plots=FALSE* option is given, there will be *_plots.pdf* files generated for each chromosome, containing the following plots:
 
+![sample ordination](sample_ordination.png)
+* constrained ordination plot for samples, and the trait(s) vector(s). The analysis uses sample scores along the first constrained axis, CAP1, but multiple correlated traits can be used to define it.
 
-# to compile all chromosomes together and plot genome-wide manhattan plot (only uses contigs with "chr" in the name!):
+![qq plot](qqplot.png)
+* q-q plot of SNP scores along CAP1 compared to SNP scores along a very high-order MDS representing noise.
+
+![raw manhattan](raw_manhattan.png)
+* Manhattan plot of all analyzed sites. Adjusted p-values are supposed to be genome-wide, if the total number of analyzed SNPs (across the whole genome) is supplied to *RDA_GWAS.R* as *nsites=1234567* argument.
+
+![pruned manhattan](pruned_manhttan.png)
+* Manhattan plot for distace-pruned top-zscore SNPs. Pruning follows the same procedure as LD-pruning but with distances instead of LD (LD stuff is currently in the works). In short, the top z-score SNP is chosen first, then the next one is the one that has highest z-score at least *prune.dist* away from the first one, and so on. *prune.dist* is the argument to *RDA_GWAS.R*, default is 50000.
+
+To compile all chromosomes together and plot genome-wide manhattan plot (only uses contigs with "chr" in the name!):
+```bash
 ls *_pd.RData >pds
 Rscript compile_chromosomes.R in=pds
-
 ```
 ## Run with hold-out samples ##
 This is a bit more involved. First, we need to list hold-out sample names in a file. We might wish to make many such files listing randomly picked hold-out samples. So we will have a bunch of sample-listing files named, for example, *rep25_10* - which would be 25th replicate of witholding 10 samples. We might also need to make replicate-specific tables of covariates, especially if they include unconstrained MDSes - those we are supposed to compute based on the dataset *without the hold-out samples*. See *write_holdout_reps.R* for example R code (spagetty warning). 
