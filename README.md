@@ -9,7 +9,7 @@
 
 The key script here is **RDA_GWAS.R**. The genotype file needed to run exmple code below, *chr14.postAlleles.gz*, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . 
 
-#### RDA_GWAS.R: Arguments (things we need to run this method)
+### *RDA_GWAS.R*: Main arguments (things we need to run this method)
 > **Note:** all tables must be space-delimited, and can be compressed .gz files.
 
 **gt=[filename]** Genotypes: table of minor allele counts in each sample (rows - loci, columns - samples). The first two columns must be chromosome, position. Header line must be present (chr, pos, sample names). I recommend running the method on *gt* files for individual chromosomes, to use less memory and to run it in parallel.
@@ -24,7 +24,7 @@ The key script here is **RDA_GWAS.R**. The genotype file needed to run exmple co
 
 **hold.out=[filename]**  File listing sample names to hold out from the whole analysis for subsequent testing of the polygenic score's prediction accuracy. May be omitted.
 
-### other RDA_GWAS.R arguments
+### Other *RDA_GWAS.R* arguments
 
 **outfile=[filename]**  Output file name.
 
