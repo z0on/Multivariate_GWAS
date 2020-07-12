@@ -10,7 +10,7 @@
 The key script here is **RDA_GWAS.R**. The genotype file needed to run exmple code below, *chr14.postAlleles.gz*, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . 
 
 #### RDA_GWAS.R: Arguments (things we need to run this method)
->> **Note:** all tables must be space-delimited, and can be compressed .gz files.
+> **Note:** all tables must be space-delimited, and can be compressed .gz files.
 
 **gt=[filename]** Genotypes: table of minor allele counts in each sample (rows - loci, columns - samples). The first two columns must be chromosome, position. Header line must be present (chr, pos, sample names). I recommend running the method on *gt* files for individual chromosomes, to use less memory and to run it in parallel.
 
@@ -18,9 +18,9 @@ The key script here is **RDA_GWAS.R**. The genotype file needed to run exmple co
 
 **traits=[filename]** Table of trait(s). First column must be sample names. There must be at least 2 columns (samples, 1 trait). Header line must be present (sample, names of traits). Just as *covars*, this table may not fully match the genotype table; rows containing NAs will be removed.
 
-**gdist=[filename]** Matrix of genetic distances between samples listed in the genotype file (e.g. IBS matrix from angsd). Note: there must be no header line or other non-numeric columns.
+**gdist=[filename]** Matrix of genetic distances between samples listed in the genotype file (e.g. IBS matrix from ***angsd***). Note: there must be no header line or other non-numeric columns.
 
-**gdist.samples=[filename]** Single-column list of sample names *exactly corresponding* to the genotype AND genetic distances matrix. Could be filenames with leading path and trailing extension (these will be removed) - basically use the same file that was used for **-b** argument in angsd to obtain IBS matrix and genotypes (see **Appendix**).
+**gdist.samples=[filename]** Single-column list of sample names *exactly corresponding* to the genotype AND genetic distances matrix. Could be filenames with leading path and trailing extension (these will be removed) - basically use the same file that was used for ***-b*** argument in ***angsd*** to obtain IBS matrix and genotypes (see **Appendix**).
 
 **hold.out=[filename]**  File listing sample names to hold out from the whole analysis for subsequent testing of the polygenic score's prediction accuracy. May be omitted.
 
