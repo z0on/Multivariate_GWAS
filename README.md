@@ -127,7 +127,7 @@ https://doi.org/10.1111/mec.13476 ; https://doi.org/10.1111/mec.14584
 # Appendix
 #### How to get genotypes (posterior minor allele counts) and genetic distance matrix (IBS) from ANGSD
 
-Assume we have a file *bams.qc* listing our (indexed) bam files, from which we have already tossed all the samples that are severely under-sequenced, clonal, wrong species, or just look weird a PCoA plot. We have already decided on the genotyping rate cutoff (-minInd argument to angsd), which is the number of individuals in which a locus must be represented by at least one read (idealy it shoudl eb set to 75-80% of total number of samples). We are going after variants of minor allele 0.05 and higher (-minMaf 0.05): 
+Assume we have a file *bams.qc* listing our (indexed) bam files, from which we have already tossed all the samples that are severely under-sequenced, clonal, wrong species, or just look weird a PCoA plot. We have already decided on the genotyping rate cutoff (-minInd argument to angsd), which is the number of individuals in which a locus must be represented by at least one read (idealy it shoudl be set to 75-80% of total number of samples). We are going after variants of minor allele 0.05 and higher (-minMaf 0.05): 
 ```bash
 FILTERS="-uniqueOnly 1 -remove_bads 1 -skipTriallelic 1 -minMapQ 30 -minQ 20 -dosnpstat 1 -doHWE 1 -maxHetFreq 0.5 -sb_pval 1e-5 -hetbias_pval 1e-5 -minInd 152 -snp_pval 1e-5 -minMaf 0.05 "
 TODO="-doMajorMinor 1 -doMaf 1 -doCounts 1 -makeMatrix 1 -doIBS 1 -doGeno 8 -doPost 1"
