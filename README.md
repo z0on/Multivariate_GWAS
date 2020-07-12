@@ -34,8 +34,6 @@ The key script here is **RDA_GWAS.R**. The genotype file needed to run exmple co
 
 **prune.dist=50000** Pruning distance (chosen SNPs must be at least that far apart).
 
-**Output or RDA_GWAS.R:**   RData bundle containing results table for pruned SNPs (*out*) with zscores, pvalues, betas and R2s, their genotypes (*gt.s*), genotypes of the test sample set (*gt.test*), sample scores for the trait (*sample.scores* - not including the hold-out samples), and Manhattan plot data for all sites (*manh*).
-
 ## Simple run, for a whole dataset (without hold-out samples) ## 
 Assuming we have multiple *.postAlleles.gz* files with genotypes, one file per chromosome:
 ```bash
