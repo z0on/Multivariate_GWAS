@@ -12,19 +12,19 @@ The key script here is **RDA_GWAS.R**. The genotype file needed to run exmple co
 #### RDA_GWAS.R: Arguments (things we need to run this method)
 > **Note:** all tables must be space-delimited, and can be compressed .gz files.
 
-**gt=[filename]** Genotypes: table of minor allele counts (rows - loci, columns - samples) the first two columns must be chromosome, position header line must be present (chr, pos, sample names). Better have multiple genotype tables, split by chromosome, to run things with less memory and in parallel.
+**gt=[filename]** Genotypes: table of minor allele counts in each sample(rows - loci, columns - samples). The first two columns must be chromosome, position. Header line must be present (chr, pos, sample names). Better have multiple genotype tables, split by chromosome, to run things with less memory and in parallel.
 
-**covars=[filename]**  Table of covariates to use (rows - samples, columns - covariates). First column must be sample names. Header line must be present (sample, covariates). May not fully match the genotype table. Rows containing NA will be removed.
+**covars=[filename]**  Table of covariates (rows - samples, columns - covariates). First column must be sample names. Header line must be present (sample, covariates). May not fully match the genotype table. Rows containing NA will be removed.
 
 **traits=[filename]** Table of trait(s). First column must be sample names. There must be at least 2 columns (samples, 1 trait). Header line must be present (sample, traits). May not fully match the genotype table. Rows containing NAs will be removed.
 
-**gdist=[filename]** Matrix of genetic distances between samples listed in the genotype file (e.g. IBS matrix from angsd). No header line or other non-numeric columns.
+**gdist=[filename]** Matrix of genetic distances between samples listed in the genotype file (e.g. IBS matrix from angsd). There must be no header line or other non-numeric columns.
 
-**gdist.samples=[filename]** Single-column list of sample names *exactly corresponding* to the genotype AND genetic distances matrix. Could be filenames with leading path and trailing extension (these will be removed) - basically use the same file that was used for -b argument in angsd to obtain IBS matrix and genotypes.
+**gdist.samples=[filename]** Single-column list of sample names *exactly corresponding* to the genotype AND genetic distances matrix. Could be filenames with leading path and trailing extension (these will be removed) - basically use the same file that was used for -b argument in angsd to obtain IBS matrix and genotypes (see **Appendix**).
 
-**hold.out=[filename]**  File listing sample names to hold out from the whole analysis for subsequent testing. Omit this if working with all samples
+**hold.out=[filename]**  File listing sample names to hold out from the whole analysis for subsequent testing. Omit this if working with all samples.
 
-#### other RDA_GWAS.R arguments
+### other RDA_GWAS.R arguments
 
 **outfile=[filename]**  Output file name.
 
