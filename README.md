@@ -2,10 +2,10 @@
 ## based on constrained ordination
 
 ### Advantages:
-- leverages existing SNP covariance structure to detect polygenic signals
-- any number of covariates can be removed without loss of power
-- naturally generates empirical null distribution to detect true signal and calculate p-values
-- several correlated traits can be used together as a "compound trait"
+- leverages natural SNP covariance structure to detect polygenic signals;
+- any number of nuisance covariates can be removed without loss of power;
+- naturally generates empirical null distribution to detect true signal and calculate p-values;
+- several correlated traits can be used together as a "compound trait".
 
 The key script here is **RDA_GWAS.R**. The genotype file needed to run exmple code below, *chr14.postAlleles.gz*, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . 
 
