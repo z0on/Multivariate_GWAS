@@ -114,9 +114,9 @@ This will generate a plot *reps50.pdf* looking somewhat like this:
 ![predictions](pd_predictions.png)
 
 Where:
-* panel 1: scan through z-score cutoffs for best predictions (using lm betas)
-* panel 2: predictions for hold-out samples based on lm betas
-* panel 3: predictions based on regularized betas (glmnet)
+* panel 1: scan through z-score cutoffs for best predictions (using lm betas). Basically it shows whether preriction improves if we keep including more and more SNPs with worse z-scores. 
+* panel 2: predictions for hold-out samples based on lm betas, for the z-score cutoff giving maximal prediction accuracy (listed above the panel). Colors are different replicates, just for sanity check: all the well-predicted samples must not belong to a single replicate. 
+* panel 3: same as panel 2, but based on regularized betas (from elastic net regression)
 * panel 4: comparison of simple and regularized predictions
 
 ## Where does it come from?
