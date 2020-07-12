@@ -41,6 +41,7 @@ Assuming we have multiple *.postAlleles.gz* files with genotypes, one file per c
 for CHR in `ls *postAlleles.gz`; do
 # remove everything from the file name after the first non-alphanumeric character, to get neater output names
 OUTN=`echo $CHR | perl -pe 's/^([\w\d]+)\\..+/$1/'`;
+# writing down a list of calls to RDA_GWAS.R, for each chromosome
 echo "Rscript RDA_GWAS.R gt=$CHR covars=mds2 traits=pd.traits gdist.samples=bams.qc gdist=zz8.ibsMat outfile=${OUTN}_pd.RData">>allchroms;
 done
 ```
