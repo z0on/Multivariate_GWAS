@@ -74,7 +74,7 @@ Also, unless *plots=FALSE* option was given, there will be *_plots.pdf* files ge
 ![pruned manhattan](pruned_manhattan.png)
 * Manhattan plot for distace-pruned top-zscore SNPs. Pruning follows the same procedure as LD-clumping but with physical distances instead of LD (LD stuff is currently in the works). In short, out of SNPs with z-score exceeding 2, we choose the best-zscore SNP, remove all SNPs within *prune.dist* from it that have the same z-score sign, repeat for next-best remaining SNP, and so on. *prune.dist* is the argument to *RDA_GWAS.R*, default is 50000.
 
-To combine all chromosomes together and plot genome-wide manhattan plot (only uses contigs with "chr" in the name!):
+To combine all chromosomes together and plot genome-wide manhattan plot (the plot only uses contigs with "chr" in the name!):
 ```bash
 ls *_pd.RData >pds
 Rscript compile_chromosomes.R in=pds
