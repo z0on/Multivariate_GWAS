@@ -7,7 +7,8 @@
 - naturally generates empirical null distribution to detect true signal and calculate p-values;
 - several correlated traits can be used together as a "compound trait".
 
-The key script here is **RDA_GWAS.R**. The genotype file needed to run exmple code below, *chr14.postAlleles.gz*, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . 
+The key script here is **RDA_GWAS.R**, which is designed for command-line usage (`Rscript RDA_GWAS.R [arguments]`). 
+The genotype file needed to run exmple code below, *chr14.postAlleles.gz*, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . 
 
 ### *RDA_GWAS.R*: Main arguments (things we need to run this method)
 > **Note:** all tables must be space-delimited, and can be compressed .gz files.
@@ -141,7 +142,7 @@ First, let's unarchive it and split by chromosome:
 ```bash
 zcat zz8.geno.gz | awk -F, 'BEGIN { FS = "\t" } ; {print > $1".split.geno"}'
 ```
-If you have some short contigs in addition to chromosomes, you might wish to concatenate them together into a separate *unplaced.split.geno* file before proceeding. If your genome is highly fragmented, pre-concatenate it into "fake chromosomes" before mapping (see [concat_fasta.pl](https://github.com/z0on/2bRAD_denovo/blob/master/concatFasta.pl) ).
+If you have some short contigs in addition to chromosomes, you might wish to concatenate them together into a separate *unplaced.split.geno* file before proceeding. If your genome is highly fragmented, pre-concatenate it into "fake chromosomes" before mapping (see [concat_fasta.pl](https://github.com/z0on/2bRAD_denovo/blob/master/concatFasta.pl).
 
 Now, we need to calculate posterior number of minor alleles:
 ```bash
