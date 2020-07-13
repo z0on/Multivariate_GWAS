@@ -12,27 +12,27 @@ The key script here is **RDA_GWAS.R**. The genotype file needed to run exmple co
 ### *RDA_GWAS.R*: Main arguments (things we need to run this method)
 > **Note:** all tables must be space-delimited, and can be compressed .gz files.
 
-**gt=[filename]** Genotypes: table of minor allele counts in each sample (rows - loci, columns - samples). The first two columns must be chromosome, position. Header line must be present (chr, pos, sample names). I recommend running the method on *gt* files for individual chromosomes, to use less memory and to run it in parallel.
+`gt=[filename]` Genotypes: table of minor allele counts in each sample (rows - loci, columns - samples). The first two columns must be chromosome, position. Header line must be present (chr, pos, sample names). I recommend running the method on *gt* files for individual chromosomes, to use less memory and to run it in parallel.
 
-**covars=[filename]**  Table of covariates (rows - samples, columns - covariates). First column must be sample names. Header line must be present (sample, names of covariates). May not fully match the genotype table - the script will match them using the *sample* column. Rows containing NA will be removed.
+`covars=[filename]`  Table of covariates (rows - samples, columns - covariates). First column must be sample names. Header line must be present (sample, names of covariates). May not fully match the genotype table - the script will match them using the *sample* column. Rows containing NA will be removed.
 
-**traits=[filename]** Table of trait(s). First column must be sample names. There must be at least 2 columns (samples, 1 trait). Header line must be present (sample, names of traits). Just as *covars*, this table may not fully match the genotype table; rows containing NAs will be removed.
+`traits=[filename]` Table of trait(s). First column must be sample names. There must be at least 2 columns (samples, 1 trait). Header line must be present (sample, names of traits). Just as *covars*, this table may not fully match the genotype table; rows containing NAs will be removed.
 
-**gdist=[filename]** Matrix of genetic distances between samples listed in the genotype file (e.g. IBS matrix from ***angsd***). Note: there must be no header line or other non-numeric columns.
+`gdist=[filename]` Matrix of genetic distances between samples listed in the genotype file (e.g. IBS matrix from ***angsd***). Note: there must be no header line or other non-numeric columns.
 
-**gdist.samples=[filename]** Single-column list of sample names *exactly corresponding* to the genotype AND genetic distances matrix. Could be filenames with leading path and trailing extension (these will be removed) - basically use the same file that was used for ***-b*** argument in ***angsd*** to obtain IBS matrix and genotypes (see **Appendix**).
+`gdist.samples=[filename]` Single-column list of sample names *exactly corresponding* to the genotype AND genetic distances matrix. Could be filenames with leading path and trailing extension (these will be removed) - basically use the same file that was used for ***-b*** argument in ***angsd*** to obtain IBS matrix and genotypes (see **Appendix**).
 
-**hold.out=[filename]**  File listing sample names to hold out from the whole analysis for subsequent testing of the polygenic score's prediction accuracy. May be omitted.
+`hold.out=[filename]`  File listing sample names to hold out from the whole analysis for subsequent testing of the polygenic score's prediction accuracy. May be omitted.
 
 ### Other *RDA_GWAS.R* arguments
 
-**outfile=[filename]**  Output file name.
+`outfile=[filename]`  Output file name.
 
-**plots=TRUE** Whether to plot diagnostic plots ([outfile]_plots.pdf).
+`plots=TRUE` Whether to plot diagnostic plots ([outfile]_plots.pdf).
 
-**nsites=5500000** Total number of sites *acros the whole genome* that are being analyzed - this is to compute genome-wide FDR (Benjamini-Hochberg method).
+`nsites=5500000` Total number of sites *acros the whole genome* that are being analyzed - this is to compute genome-wide FDR (Benjamini-Hochberg method).
 
-**prune.dist=50000** Pruning distance (chosen SNPs must be at least that far apart).
+`prune.dist=50000` Pruning distance (chosen SNPs must be at least that far apart).
 
 ## Simple run, for a whole dataset (without hold-out samples) ## 
 Assuming we have multiple *.postAlleles.gz* files with genotypes, one file per chromosome:
