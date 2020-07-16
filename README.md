@@ -100,7 +100,7 @@ Executing all commands in *pdd* (much preferrably in parallel!) will give us 50 
 >compd
 for r in `seq 1 50`; do
 ls *pd_rep${r}_*.RData >rep${r}_pd; 
-echo "Rscript compile_chromosomes.R in=rep${r}_pd plotManhattan=FALSE">>compd;
+echo "Rscript compile_chromosomes.R reps=rep${r}_pd plotManhattan=FALSE">>compd;
 done
 ```
 Executing all commands in *compd* gives us per-replicate, whole-genome results. Each output file includes genotypes for hold-out samples, not included in the main analysis. The last stage is to see how well the trait values in these samples are predicted based on their polygenic scores, and summarize the results of all replicates in a nice plot: 
