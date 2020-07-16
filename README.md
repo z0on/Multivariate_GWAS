@@ -7,39 +7,40 @@
 - naturally generates empirical null distribution to detect true signal and calculate p-values;
 - several correlated traits can be used together as a "compound trait".
 
-The key script here is **RDA_GWAS.R**. The genotype file needed to run exmple code below, *chr14.postAlleles.gz*, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . 
+The key script here is **RDA_GWAS.R**, which is designed for command-line usage (`Rscript RDA_GWAS.R [arguments]`). 
+The genotype file needed to run exmple code below, *chr14.postAlleles.gz*, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . 
 
 ### *RDA_GWAS.R*: Main arguments (things we need to run this method)
 > **Note:** all tables must be space-delimited, and can be compressed .gz files.
 
-**gt=[filename]** Genotypes: table of minor allele counts in each sample (rows - loci, columns - samples). The first two columns must be chromosome, position. Header line must be present (chr, pos, sample names). I recommend running the method on *gt* files for individual chromosomes, to use less memory and to run it in parallel.
+`gt=[filename]` Genotypes: table of minor allele counts in each sample (rows - loci, columns - samples). The first two columns must be chromosome, position. Header line must be present (chr, pos, sample names). I recommend running the method on *gt* files for individual chromosomes, to use less memory and to run it in parallel. (see **Appendix** about how to get this from ***angsd***)
 
-**covars=[filename]**  Table of covariates (rows - samples, columns - covariates). First column must be sample names. Header line must be present (sample, names of covariates). May not fully match the genotype table - the script will match them using the *sample* column. Rows containing NA will be removed.
+`covars=[filename]`  Table of covariates (rows - samples, columns - covariates). First column must be sample names. Header line must be present (sample, names of covariates). May not fully match the genotype table - the script will match them using the *sample* column. Rows containing NA will be removed.
 
-**traits=[filename]** Table of trait(s). First column must be sample names. There must be at least 2 columns (samples, 1 trait). Header line must be present (sample, names of traits). Just as *covars*, this table may not fully match the genotype table; rows containing NAs will be removed.
+`traits=[filename]` Table of trait(s). First column must be sample names. There must be at least 2 columns (samples, 1 trait). Header line must be present (sample, names of traits). Just as *covars*, this table may not fully match the genotype table; rows containing NAs will be removed.
 
-**gdist=[filename]** Matrix of genetic distances between samples listed in the genotype file (e.g. IBS matrix from ***angsd***). Note: there must be no header line or other non-numeric columns.
+`gdist=[filename]` Matrix of genetic distances between samples listed in the genotype file (e.g. IBS matrix from ***angsd***, see **Appendix**). Note: there must be no header line or other non-numeric columns.
 
-**gdist.samples=[filename]** Single-column list of sample names *exactly corresponding* to the genotype AND genetic distances matrix. Could be filenames with leading path and trailing extension (these will be removed) - basically use the same file that was used for ***-b*** argument in ***angsd*** to obtain IBS matrix and genotypes (see **Appendix**).
+`gdist.samples=[filename]` Single-column list of sample names *exactly corresponding* to the genotype AND genetic distances matrix. Could be filenames with leading path and trailing extension (these will be removed) - basically use the same file that was used for ***-b*** argument in ***angsd*** to obtain IBS matrix and genotypes (see **Appendix**).
 
-**hold.out=[filename]**  File listing sample names to hold out from the whole analysis for subsequent testing of the polygenic score's prediction accuracy. May be omitted.
+`hold.out=[filename]`  File listing sample names to hold out from the whole analysis for subsequent testing of the polygenic score's prediction accuracy. May be omitted.
 
 ### Other *RDA_GWAS.R* arguments
 
-**outfile=[filename]**  Output file name.
+`outfile=[filename]`  Output file name.
 
-**plots=TRUE** Whether to plot diagnostic plots ([outfile]_plots.pdf).
+`plots=TRUE` Whether to plot diagnostic plots ([outfile]_plots.pdf).
 
-**nsites=5500000** Total number of sites *acros the whole genome* that are being analyzed - this is to compute genome-wide FDR (Benjamini-Hochberg method).
+`nsites=5500000` Total number of sites *acros the whole genome* that are being analyzed - this is to compute genome-wide FDR (Benjamini-Hochberg method).
 
-**prune.dist=50000** Pruning distance (chosen SNPs must be at least that far apart).
+`prune.dist=50000` Pruning distance (chosen SNPs must be at least that far apart).
 
 ## Simple run, for a whole dataset (without hold-out samples) ## 
 Assuming we have multiple *.postAlleles.gz* files with genotypes, one file per chromosome:
 ```bash
 >allchroms
 for CHR in `ls *postAlleles.gz`; do
-# remove everything from the file name after the first non-alphanumeric character, to get neater output names
+# removing everything from the file name after the first non-alphanumeric character, to get neater output names
 OUTN=`echo $CHR | perl -pe 's/^([\w\d]+)\\..+/$1/'`;
 # writing down a list of calls to RDA_GWAS.R, for each chromosome
 echo "Rscript RDA_GWAS.R gt=$CHR covars=mds2 traits=pd.traits gdist.samples=bams.qc gdist=zz8.ibsMat outfile=${OUTN}_pd.RData">>allchroms;
@@ -58,13 +59,13 @@ Also, unless *plots=FALSE* option was given, there will be *_plots.pdf* files ge
 
 ![sample ordination](sample_ordination.png)
 * constrained ordination plot for samples, and the trait(s) vector(s). The analysis uses sample scores along the first constrained axis, CAP1, but multiple correlated traits can be used to define it. 
-> Note: the metod always flips the CAP1 axis so that increase in the trait value (specifically, first column in the *traits* table) corresponds with increase of CAP1 score. Since CAP1 orientation is arbitrary, this does not change anything except making the results easier to comprehend. This is a raw plot, before flipping - the SNP ordination plot  below (colored dors in rings) will be a flipped version of this one. 
+> Note: the metod always flips the CAP1 axis so that increase in the trait value (specifically, first column in the *traits* table) corresponds with increase of CAP1 score. Since CAP1 orientation is arbitrary, this does not change anything except making the results easier for a human to comprehend. The plot above is a raw plot, before flipping - the SNP ordination plot below (colored dots in rings) will be a flipped version of this one. 
 
 ![qq plot](qqplot.png)
 * q-q plot of SNP scores along CAP1 compared to SNP scores along a very high-order MDS representing noise. Departure upwards from the red line at the top right corner indicates positive signal, departure downwards in the lower left corner - negative signal. In this case these is some positive signal, but no negative signal.
 
 ![snp scores](snp_ordination.png)
-* SNP scores in the same ordination space: CAP1 (trait) vs MDS100 (noise). Colored rings are increasing z-scores of distamnce from 0, the outmost ring is z > 5. The idea is to check if the cloud is more extended / has more outliers along CAP1 compared to MDS100.
+* SNP scores in the same ordination space: CAP1 (trait) vs MDS100 (noise). Colored rings are increasing z-scores of distance from 0, the outmost ring is z > 5. The idea is to check if the cloud is more extended / has more outliers along CAP1 compared to MDS100.
 
 
 ![raw manhattan](raw_mahnattan.png)
@@ -73,13 +74,13 @@ Also, unless *plots=FALSE* option was given, there will be *_plots.pdf* files ge
 ![pruned manhattan](pruned_manhattan.png)
 * Manhattan plot for distace-pruned top-zscore SNPs. Pruning follows the same procedure as LD-clumping but with physical distances instead of LD (LD stuff is currently in the works). In short, out of SNPs with z-score exceeding 2, we choose the best-zscore SNP, remove all SNPs within *prune.dist* from it that have the same z-score sign, repeat for next-best remaining SNP, and so on. *prune.dist* is the argument to *RDA_GWAS.R*, default is 50000.
 
-To combine all chromosomes together and plot genome-wide manhattan plot (only uses contigs with "chr" in the name!):
+To combine all chromosomes together and plot genome-wide manhattan plot (the plot only uses contigs with "chr" in the name!):
 ```bash
 ls *_pd.RData >pds
 Rscript compile_chromosomes.R in=pds
 ```
 ## Run with hold-out samples ##
-The idea is to withold some samples from the analysis and use them later to test whether we can predict the trait in them from their genotypes. This is a bit more involved. First, we need to list hold-out sample names in a file. We might wish to make many such files listing randomly picked hold-out samples. So we will have a bunch of sample-listing files named, for example, *rep10_25* - which would be 10th replicate of witholding 25 samples. We might also need to make replicate-specific tables of covariates, especially if they include unconstrained MDSes - those we are supposed to compute based on the dataset *without the hold-out samples*. See *write_holdout_reps.R* for example R code (spagetty warning). 
+The idea is to withold some samples from the analysis and use them later to test whether we can predict the trait in them from their genotypes. This is a bit more involved. First, we need to list hold-out sample names in a file. We might wish to make many such files listing randomly picked hold-out samples. So we will have a bunch of sample-listing files named, for example, *rep10_25* - which would be 10th replicate of witholding 25 samples. We might also need to make replicate-specific tables of covariates, especially if they include unconstrained MDSes - those we are supposed to compute based on the dataset *without the hold-out samples*. See *write_holdout_reps.R* for example R code (*spaghetti warning...*). 
 
 Then we basically need to run the above code for each of the replicates, with additional hold.out=[filename] argument to *RDA_GWAS.R* . Here is one way to do this with bash looping. Note that in this case we are setting up a run with 50 hold-out replicates, with replicate-specific covariate files named like *mds2_10_25* (to correspond with the hold-out samples filenames like *rep10_25*). Note that we do NOT need to subset our genotypes, genetic distances, or traits tables - this will happen automatically, just supply full files for all samples. Also there is no need to have replicate-specific covariates if the covariates are not computed from the dataset itself (for example, sequencing batch, population designations of each sample, sequencing quality metrics).
 
@@ -141,7 +142,7 @@ First, let's unarchive it and split by chromosome:
 ```bash
 zcat zz8.geno.gz | awk -F, 'BEGIN { FS = "\t" } ; {print > $1".split.geno"}'
 ```
-If you have some short contigs in addition to chromosomes, you might wish to concatenate them together into a separate *unplaced.split.geno* file before proceeding. If your genome is highly fragmented, pre-concatenate it into "fake chromosomes" before mapping (see [concat_fasta.pl](https://github.com/z0on/2bRAD_denovo/blob/master/concatFasta.pl) ).
+If you have some short contigs in addition to chromosomes, you might wish to concatenate them together into a separate *unplaced.split.geno* file before proceeding. If your genome is highly fragmented, pre-concatenate it into "fake chromosomes" before mapping (see [concat_fasta.pl](https://github.com/z0on/2bRAD_denovo/blob/master/concatFasta.pl).
 
 Now, we need to calculate posterior number of minor alleles:
 ```bash
