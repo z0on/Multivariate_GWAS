@@ -104,9 +104,9 @@ allpreds$re.lm=rescale(allpreds$lm,range(allpreds$true))+rnorm(nrow(allpreds),0,
 allpreds$re.rr=rescale(allpreds$rr,range(allpreds$true))+rnorm(nrow(allpreds),0,jitter)
 allpreds$re.true=allpreds$true+rnorm(nrow(allpreds),0,jitter)
 
-plot(re.lm~re.true,allpreds,main=paste("z:",zscan[best]," Nsnps:",N," simple betas"),col= repColors,pch=16)
+plot(re.lm~re.true,allpreds,main=paste("z:",zscan[best]," Nsnps:",N," simple betas"),col= repColors,pch=16,ylab="predicted",xlab="observed")
 mtext(round(cor(allpreds$lm,allpreds$true)^2,2))
-plot(re.rr~re.true,allpreds,main=paste("z:",zscan[best]," Nsnps:",N," rr betas"),col= repColors,pch=16)
+plot(re.rr~re.true,allpreds,main=paste("z:",zscan[best]," Nsnps:",N," rr betas"),col= repColors,pch=16,ylab="predicted",xlab="observed")
 mtext(round(cor(allpreds$rr,allpreds$true)^2,2))
 plot(lm~rr,allpreds,col= repColors,main="prediction comparison",pch=16)
 dev.off()
