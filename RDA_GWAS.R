@@ -8,22 +8,22 @@ Any number of covariates can be removed wihtout loss of power.
 Per-SNP values are computed against the first constrained ordination axis. 
 Several correlated traits can be used to define that axis.
  
-arguments: 
+arguments (all tables are space-delimited, can be .gz): 
 
-gt=[filename]        genotypes: tab-delimited table of minor allele counts 
+gt=[filename]        genotypes: table of minor allele counts 
                      (rows - loci, columns - samples) the first two columns must be chromosome, 
                      position header line must be present (chr, pos, sample names)
 				
-covars=[filename]    tab-delimited table of covariates to use (rows - samples, columns - covariates).
+covars=[filename]    table of covariates to use (rows - samples, columns - covariates).
                      First column must be sample names. Header line must be present (sample, covariates). 
                      May not fully match the genotype table. Rows containing NA will be removed.
 
-traits=[filename]    Tab-delimited table of trait(s). First column must be sample names. 
+traits=[filename]    table of trait(s). First column must be sample names. 
                      There must be at least 2 columns (samples, 1 trait). Header line 
                      must be present (sample, traits). May not fully match the genotype table. 
                      Rows containing NA will be removed.
 
-gdist=[filename]     Tab-delimited matrix of genetic distances between samples listed in the genotype 
+gdist=[filename]     matrix of genetic distances between samples listed in the genotype 
                      file (e.g. IBS matrix from angsd). No header line or other non-numeric columns.
 					
 gdist.samples=[filename]   single-column list of sample names corresponding to the genotype 
@@ -41,8 +41,9 @@ nsites=5500000       number of sites to compute FDR (for Manhattan plot)
 prune.dist=50000     pruning distance (selected SNPs must be at least that far apart)
 
 Output:              An RData bundle containing results table for pruned SNPs (out) with zscores, pvalues, 
-                     betas and R2, their genotypes (gt.s), manhattan plot data for all sites (manh), and genetic
-                     distances matrix corresponding to the data (ibs).
+                     betas and R2, their genotypes (gt.s), genotypes of hold-out samples (if any) at the selected
+                     SNPs (gt.test), manhattan plot data for all sites (manh), and sample scores 
+                     in the ordination (sample.scores).
    
 Mikhail Matz, matz@utexas.edu, July 2020
 
@@ -87,6 +88,9 @@ require(dplyr)
 require(vegan)
 require(ggplot2)
 require(glmnet)
+require(data.table)
+require(R.utils)
+options(datatable.fread.datatable=FALSE)
 
 # setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS")
 
@@ -150,10 +154,12 @@ for (ci in 1:ncol(covars)) {
 traits=data.frame(traits[goods.use,])
 row.names(traits)=goods.use
 colnames(traits)=tnames
+if (hold.out==0) { traits.test =traits }
 
-message(outfile, ": ",nrow(traits)," samples used, ",length(goods.test)," held out")
-message("reading genotypes...")
-gt=read.table(gtfile)
+message(outfile, ": ",nrow(traits)," samples used, ",sum(goods.test!=0)," held out")
+message("reading genotypes...",appendLF=FALSE)
+gt=fread(gtfile,nThread=4)
+message("done")
 # removing possibly duplicated sites
 gt=distinct(gt,paste(gt[,1],gt[,2],sep=":"),.keep_all=T)
 row.names(gt)=paste(gt[,1],gt[,2],sep=":")
@@ -166,10 +172,10 @@ gt=gt[,goods.use]
 
 if (plots) { pdf(paste(outfile,"_plots.pdf",sep="")) }
 
-message("computing ordination and SNP scores...")
-
+message("computing ordination and SNP scores...",appendLF=FALSE)
 #cap=capscale(ibs~.+Condition(covs),data=traits)
 cap=capscale(ibs~.+Condition(covs),data=traits,comm=t(gt))
+message("done")
 
 if(plots) { plot(cap,scaling=3,display=c("wa","cn"),mgp=c(2.3,1,0), main="sample ordination") }
 
@@ -419,7 +425,7 @@ save(out,gt.s,gt.test,sample.scores,manh,file=outfile)
 if(plots){
 	if (hold.out==0) { gt.test=gt }
 
-	tt=traits.test[,1]
+	tt=as.numeric(as.factor(traits.test[,1]))
 	tt[which(is.na(tt))]=mean(tt,na.rm=T)
 	
 	pree=c()
