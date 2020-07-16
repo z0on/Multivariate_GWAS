@@ -38,9 +38,9 @@ if (length(traits)==0) { stop ("specify traits file (traits=filename)\nRun scrip
 traits =sub("traits=","", commandArgs()[traits])
 
 
-# infile="rf19"
-# traits="rf.traits"
-# forcePred=FALSE
+ # infile="rf19"
+ # traits="rf.traits"
+ # forcePred=FALSE
 
 traits=read.table(traits,header=T,stringsAsFactors=F)
 row.names(traits)=traits$sample
@@ -62,9 +62,11 @@ for (r in 1:length(reps)){
 	traits.test$sample=NULL
 
 	goodst=row.names(traits.test)[which(!is.na(traits.test[,1]))]
-	tt=as.numeric(as.factor(traits.test[goodst,1]))
+	if(is.character(traits.test[goodst[1],1])) { 
+		tt=as.numeric(as.factor(traits.test[goodst,1])) 
+	} else { tt=as.numeric(traits.test[goodst,1]) }
+	
 	gt.test=gt.test[,goodst]
-	names(gt.test)
 	
 	pred.rr=c();pred.lm=c()
 	for (z in 1:length(zscan)) {

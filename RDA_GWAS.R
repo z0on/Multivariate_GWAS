@@ -90,22 +90,24 @@ require(ggplot2)
 require(glmnet)
 require(data.table)
 require(R.utils)
+require(scales)
 options(datatable.fread.datatable=FALSE)
 
-# setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS")
 
 #---- reading and aligning data
 
-      # gtfile = "c1314.small.postAlleles"
-      # covars = "technical.covars"
-      # traits = "pd.traits"
-      # bams = "bams.qc"
-      # ibs="zz8.ibsMat"
-      # outfile="chr1314sm2.RData"
-      # plots=TRUE
-      # nsites=5500000
-      # prune.dist=50000
-      # hold.out="rep10_25"
+ setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS")
+       gtfile = "chr9.postAlleles.gz"
+       covars = "mds2_10_25"
+       traits = "rf.traits"
+       bams = "bams.qc"
+       ibs="zz8.ibsMat"
+       outfile="c9.RData"
+       plots=TRUE
+       nsites=5500000
+       prune.dist=50000
+       hold.out="rep10_25"
+ #      hold.out=0
 
 bams=scan(bams,what="character")
 #removing path
@@ -154,9 +156,8 @@ for (ci in 1:ncol(covars)) {
 traits=data.frame(traits[goods.use,])
 row.names(traits)=goods.use
 colnames(traits)=tnames
-if (hold.out==0) { traits.test =traits }
 
-message(outfile, ": ",nrow(traits)," samples used, ",sum(goods.test!=0)," held out")
+message(nrow(traits)," samples used, ",sum(goods.test!=0)," held out")
 message("reading genotypes...",appendLF=FALSE)
 gt=fread(gtfile,nThread=4)
 message("done")
@@ -177,15 +178,17 @@ message("computing ordination and SNP scores...",appendLF=FALSE)
 cap=capscale(ibs~.+Condition(covs),data=traits,comm=t(gt))
 message("done")
 
-if(plots) { plot(cap,scaling=3,display=c("wa","cn"),mgp=c(2.3,1,0), main="sample ordination") }
 
 # correcting sign to have positive scores for positive traits[,1] values
 flip=1
 if(coef(lm(cap$CCA$u~traits[,1]))[2]<0) { flip=(-1)}
+cap$CCA$u[,1]=cap$CCA$u[,1]*flip
+
+if(plots) { plot(cap,scaling=3,display=c("wa","cn"),mgp=c(2.3,1,0), main="sample ordination") }
 
 snp.scores=as.vector(scale(cap$CCA$v[,1]))*flip
 names(snp.scores)=row.names(cap$CCA$v)
-sample.scores=cap$CCA$u[,1]*flip
+sample.scores=cap$CCA$u[,1]
 
 #------- q-q plot to see if there is signal
 
@@ -264,7 +267,7 @@ getEmpP <- function(Obs, Null,nq=10000){
 nulls=data.frame(cap$CA$v[,20:120])
 nulls=data.frame(apply(nulls,2,scale))
 nulls=stack(nulls)$values
-message(outfile," calculating pvalues...")
+message("calculating pvalues...")
 pvals=getEmpP(snp.scores,nulls)
 
 #--------- manhattan plot (by chromosome)
@@ -298,7 +301,7 @@ if(plots) {
 #----------- pruning SNPs by z-scores and distance, computing simple betas and r2s (by chromosome)
 
 blips=which(abs(snp.scores)>2)
-message("\n",outfile," ",length(blips)," blips; pruning...")
+message("\n",length(blips)," blips; pruning...")
 tops=gt[blips,]
 tops.scores=snp.scores[blips]
 chs=row.names(tops)
@@ -349,7 +352,7 @@ out$pos=as.numeric(sub(".+:","",row.names(gt[blips,])))
 out=out[!(bs==0),]
 out$logp=-log(out$pvals,10)
 out$logp.adj=-log(out$padj,10)
-message("\n",outfile," ",nrow(out)," independent blips collected")
+message("\n",nrow(out)," independent blips collected")
 gt.s=gt[row.names(out),]
 if(hold.out!=0) { gt.test=gt.test[row.names(out),] }
 
@@ -394,7 +397,7 @@ gnets=function(dat,trait,alpha=0.5) {
 }
 
 # screening through alpha parameters
-message(outfile, ": glmnet: screening alphas...")
+message("glmnet: screening alphas...")
 as=c()
 for (a in seq(0,1,0.2)) {
 	message("     ",a)
@@ -423,31 +426,52 @@ save(out,gt.s,gt.test,sample.scores,manh,file=outfile)
 #---------------- predictng test set (if not specified, predict same set)
 
 if(plots){
-	if (hold.out==0) { gt.test=gt }
+	if (hold.out==0) { 
+		gt.test=gt[row.names(out),] 
+		traits.test=traits
+		}
 
-	tt=as.numeric(as.factor(traits.test[,1]))
-	tt[which(is.na(tt))]=mean(tt,na.rm=T)
-	
-	pree=c()
-	for (i in 1:ncol(gt.test)) {
-		pree[i]=sum(out$beta.rr*gt.test[,i])+out$intercept[1]
+	goodst=row.names(traits.test)[which(!is.na(traits.test[,1]))]
+	if(is.character(traits.test[goodst[1],1])) { 
+		tt=as.numeric(as.factor(traits.test[goodst,1])) 
+	} else { tt=as.numeric(traits.test[goodst,1]) }
+	gt.test=gt.test[,goodst]
+
+# scanning through z-score cutoffs, looking for best prediction
+	zscan=seq(2,5,0.1);zr=vector("list", length = length(zscan))
+	pred.rr=c();pred.lm=c()
+	for (z in 1:length(zscan)) {
+		minz=zscan[z]
+		for (i in 1:ncol(gt.test)) {
+			pred.rr[i]=sum(out$beta.rr[abs(out$zscore)>= minz]*gt.test[abs(out$zscore)>= minz,i])+out$intercept[1]
+			pred.lm[i]=sum(out$beta[abs(out$zscore)>= minz]*gt.test[abs(out$zscore)>= minz,i])
+		}	
+		preds=data.frame(cbind(rr=pred.rr,lm=pred.lm,true=tt))
+		row.names(preds)=goodst
+		zr[[z]]=preds
 	}
-	plot(pree~traits.test[,1],main="reg.reg. betas")
-	mtext(round(cor(pree,tt),2))
-	
-	# pree2=c()
-	# for (i in 1:ncol(gt.test)) {
-		# pree2[i]=sum(out$beta*out$r2*gt.test[,i])
-	# }
-	# plot(pree2~traits.test[,1],main="simple betas * R2")
-	# mtext(round(cor(pree2,tt),2))
-	
-	pree3=c()
-	for (i in 1:ncol(gt.test)) {
-		pree3[i]=sum(out$beta*gt.test[,i])
+	zr2=c();Ns=c()
+	for (z in 1:length(zscan)) {
+		Ns=append(Ns,sum(abs(out$zscore)>=zscan[z]))
+		allpreds=zr[[z]]
+		zr2=append(zr2,cor(allpreds$lm,allpreds$true)^2)
 	}
-	plot(pree3~traits.test[,1],main="simple betas")
-	mtext(round(cor(pree3,tt),2))
+	plot(zr2~Ns,xlab="N(SNPs)",ylab="prediction R2")
+	lines(zr2~Ns)
+
+	best=which(zr2==max(zr2))
+	allpreds=zr[[best]]
+
+	N=Ns[best]
+	jitter=0.01*max(allpreds$true)
+	allpreds$re.lm=rescale(allpreds$lm,range(allpreds$true))+rnorm(nrow(allpreds),0,jitter)
+	allpreds$re.rr=rescale(allpreds$rr,range(allpreds$true))+rnorm(nrow(allpreds),0,jitter)
+	allpreds$re.true=allpreds$true+rnorm(nrow(allpreds),0,jitter)
+
+	plot(re.lm~re.true,allpreds,main=paste("z:",zscan[best]," Nsnps:",N," simple betas"),ylab="predicted",xlab="observed")
+	mtext(round(cor(allpreds$lm,allpreds$true)^2,2))
+	plot(re.rr~re.true,allpreds,main=paste("z:",zscan[best]," Nsnps:",N," rr betas"),ylab="predicted",xlab="observed")
+	mtext(round(cor(allpreds$rr,allpreds$true)^2,2))
 
 	dev.off() 
 }
