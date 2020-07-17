@@ -151,7 +151,7 @@ First, let's unarchive it and split by chromosome:
 ```bash
 zcat zz8.geno.gz | awk -F, 'BEGIN { FS = "\t" } ; {print > $1".split.geno"}'
 ```
-If you have some short contigs in addition to chromosomes, you might wish to concatenate them together into a separate `unplaced.split.geno` file before proceeding. If your genome is highly fragmented, pre-concatenate it into "fake chromosomes" before mapping (see [`concat_fasta.pl`](https://github.com/z0on/2bRAD_denovo/blob/master/concatFasta.pl).
+If you have some short contigs in addition to chromosomes, you might wish to concatenate them together into a separate `unplaced.split.geno` file before proceeding. If your genome is highly fragmented, pre-concatenate it into "fake chromosomes" before mapping (see [`concat_fasta.pl`](https://github.com/z0on/2bRAD_denovo/blob/master/concatFasta.pl)).
 
 Then, we calculate posterior number of minor alleles:
 ```bash
