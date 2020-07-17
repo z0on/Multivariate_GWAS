@@ -97,17 +97,17 @@ options(datatable.fread.datatable=FALSE)
 #---- reading and aligning data
 
  # setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS")
-        gtfile = "chr7.postAlleles.gz"
-        covars = "mds2"
-        traits = "bleach.traits"
-        bams = "bams.qc"
-        ibs="zz8.ibsMat"
-        outfile="c7bl.RData"
-        plots=TRUE
-        nsites=5500000
-        prune.dist=50000
-        hold.out="rep14_25"
-        hold.out=0
+        # gtfile = "chr7.postAlleles.gz"
+        # covars = "mds2_14_25"
+        # traits = "pd.traits"
+        # bams = "bams.qc"
+        # ibs="zz8.ibsMat"
+        # outfile="c7pd.RData"
+        # plots=TRUE
+        # nsites=5500000
+        # prune.dist=50000
+        # hold.out="rep14_25"
+ #       hold.out=0
 
 bams=scan(bams,what="character")
 #removing path
