@@ -29,7 +29,7 @@ forceAlpha=-1        if non-negative, sets alpha parameter for glmnet regression
                      otherwise alpha will be chosen automatically based on back-prediction accuracy.
 
 Output: RData bundle containing data frame \"out\" (zscores, pvalues, betas.lm, betas.rr), genotypes for \'use\' set (gt.use) 
-genotypes for held-out \'test\' set (gt.test), traits (traits.use, traits.test), and sample scores for the \'use\' set                 
+genotypes for held-out \'test\' set (gt.test), and manhattan data for all sites (\'manh\')                 
 
 Mikhail Matz, matz@utexas.edu, July 2020
 

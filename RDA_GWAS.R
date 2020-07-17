@@ -96,18 +96,18 @@ options(datatable.fread.datatable=FALSE)
 
 #---- reading and aligning data
 
- setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS")
-       gtfile = "chr9.postAlleles.gz"
-       covars = "mds2_10_25"
-       traits = "rf.traits"
-       bams = "bams.qc"
-       ibs="zz8.ibsMat"
-       outfile="c9.RData"
-       plots=TRUE
-       nsites=5500000
-       prune.dist=50000
-       hold.out="rep10_25"
- #      hold.out=0
+ # setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS")
+        gtfile = "chr7.postAlleles.gz"
+        covars = "mds2"
+        traits = "bleach.traits"
+        bams = "bams.qc"
+        ibs="zz8.ibsMat"
+        outfile="c7bl.RData"
+        plots=TRUE
+        nsites=5500000
+        prune.dist=50000
+        hold.out="rep14_25"
+        hold.out=0
 
 bams=scan(bams,what="character")
 #removing path
@@ -178,17 +178,16 @@ message("computing ordination and SNP scores...",appendLF=FALSE)
 cap=capscale(ibs~.+Condition(covs),data=traits,comm=t(gt))
 message("done")
 
+if(plots) { plot(cap,scaling=3,display=c("wa","cn"),mgp=c(2.3,1,0), main="sample ordination") }
 
 # correcting sign to have positive scores for positive traits[,1] values
 flip=1
-if(coef(lm(cap$CCA$u~traits[,1]))[2]<0) { flip=(-1)}
-cap$CCA$u[,1]=cap$CCA$u[,1]*flip
-
-if(plots) { plot(cap,scaling=3,display=c("wa","cn"),mgp=c(2.3,1,0), main="sample ordination") }
+if(coef(lm(cap$CCA$u[,1]~traits[,1]))[2]<0) { flip=(-1)}
 
 snp.scores=as.vector(scale(cap$CCA$v[,1]))*flip
 names(snp.scores)=row.names(cap$CCA$v)
-sample.scores=cap$CCA$u[,1]
+sample.scores=as.vector(cap$CCA$u[,1])*flip
+cap$CCA$biplot[,1]=cap$CCA$biplot[,1]*flip
 
 #------- q-q plot to see if there is signal
 
@@ -210,10 +209,11 @@ if(plots) {
 	names(pscores)=c("CAP1","MDS100")
 	
 	biplot=data.frame(cap$CCA$biplot)
+	
 	if(ncol(traits)<2) { biplot$CAP2=0 }
 	biplot$x1=0
 	biplot$y1=0
-	biplot=biplot/(max(biplot[,1]/max(pscores[,1])))
+	biplot=biplot/(max(abs(biplot)/max(abs(pscores[,1]))))
 	distfrom0=apply(pscores[,1:2],1,function(x){sqrt(x[1]^2+x[2]^2)})
 	pscores$z=0
 	pscores$z[distfrom0>2]=2
@@ -281,19 +281,20 @@ manh=data.frame(cbind(chrom,pos,"zscore"=snp.scores,logp,logp.adj),stringsAsFact
 manh$zscore =as.numeric(manh$zscore)
 manh$logp=as.numeric(manh$logp)
 manh$logp.adj=as.numeric(manh$logp.adj)
-manh$pos=as.numeric(manh$pos)/1000
+manh$pos.kb=as.numeric(manh$pos)/1000
+manh$pos.Mb=manh$pos.kb/1000
 manh$chrom=as.factor(manh$chrom)
 
 if(plots) {
 	for (chr in levels(manh$chrom)) { 
 		mc=subset(manh,chrom==chr)
-		pp=ggplot(mc,aes(pos,logp))+
+		pp=ggplot(mc,aes(pos.Mb,logp))+
 			geom_point(shape = 21, colour = "grey20", aes(size=logp.adj,fill=zscore))+
 		    scale_size_continuous(limits=c(0,3),breaks=c(0.3,0.6,1,1.3,2),labels=c(0.5,0.25,0.1,0.05,1e-2))+
 			scale_fill_gradient(low="cyan3",high="coral")+
 			theme_bw() + labs(size = "p.adj")+
 			ylim(0,max(c(7,max(manh$logp))))+ggtitle(paste(chr,"raw"))+
-			xlab("position,kb")
+			xlab("position,Mb")
 		plot(pp)
 	}
 }
@@ -359,16 +360,16 @@ if(hold.out!=0) { gt.test=gt.test[row.names(out),] }
 #------ replotting pruned manhattan plot
 
 if (plots) { 
-	out$pos.kb=out$pos/1000;ch="chr13"
+	out$pos.Mb=out$pos/1e+6
 	for (ch in levels(out$chr)) { 
 		mc=out[out$chr==ch,]
-		pp=ggplot(mc,aes(pos,logp))+
+		pp=ggplot(mc,aes(pos.Mb,logp))+
 			geom_point(shape = 21, colour = "grey20", aes(size=logp.adj,fill=zscore))+
 		    scale_size_continuous(limits=c(0,3),breaks=c(0.3,0.6,1,1.3,2),labels=c(0.5,0.25,0.1,0.05,1e-2))+
 			scale_fill_gradient(low="cyan3",high="coral")+
 			theme_bw() + labs(size = "p.adj")+
 			ylim(min(mc$logp),max(c(7,max(mc$logp))))+ggtitle(paste(ch,"pruned"))+
-			xlab("position,kb")
+			xlab("position,Mb")
 		plot(pp)
 	}
 }
@@ -397,7 +398,7 @@ gnets=function(dat,trait,alpha=0.5) {
 }
 
 # screening through alpha parameters
-message("glmnet: screening alphas...")
+message("glmnet: screening alphas...",appendLF=FALSE)
 as=c()
 for (a in seq(0,1,0.2)) {
 	message("     ",a)
@@ -410,7 +411,7 @@ for (a in seq(0,1,0.2)) {
 }
 meanr2=apply(as,2,mean)
 alpha=seq(0,1,0.2)[which(meanr2==max(meanr2))]
-message(outfile, ": alpha=",alpha)
+message(" ",alpha)
 
 net.CV = cv.glmnet(t(gt.s), sample.scores, nfolds=10,alpha=0,family="gaussian")
 lambda = net.CV$lambda.min
@@ -427,7 +428,7 @@ save(out,gt.s,gt.test,sample.scores,manh,file=outfile)
 
 if(plots){
 	if (hold.out==0) { 
-		gt.test=gt[row.names(out),] 
+		gt.test=gt.s
 		traits.test=traits
 		}
 

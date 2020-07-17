@@ -52,6 +52,27 @@ for GF in *.split.geno; do
 echo "awk '{ printf \$1\"\\t\"\$2; for(i=4; i<=NF-1; i=i+3) { i2=i+1; printf \"\\t\"\$i+2*\$i2} ; printf \"\\n\";}' $GF > ${GF/.split.geno/}.postAlleles" >>bychrom
 done
 
+# ------ calculating LD
+
+module load gsl
+NB=`cat bams.qc | wc -l`
+>ld
+KBDIST=25
+for GF in *.split.geno; do echo "cut -f 1,2 $GF > ${GF}.sites && NS=\`wc -l $GF\` && gzip $GF && ngsLD --geno ${GF}.gz --probs 1 --n_ind $NB --pos ${GF}.sites --n_sites \$NS --max_kb_dist $KBDIST --out ${GF}.LD --n_threads 4 ">> ld; done
+cat ld
+ls5_launcher_creator.py -j ld -n ld -a tagmap -t 2:00:00 -w 6 -e matz@utexas.edu
+sbatch ld.slurm
+
+# removing extra columns, collecting pairs of sites with r2>0.05
+>r22
+for F in *split.geno.LD; do
+#echo "cat $F | awk '\$7>=0.05' | cut -f 1,2,3,7 >${F/.*/}.r2">>r22;
+echo "cat $F | cut -f 1,2,3,7 >${F/.*/}.full.r2">>r22;
+done
+ls5_launcher_creator.py -j r22 -n r22 -a tagmap -t 0:10:00 -w 24 -e matz@utexas.edu
+sbatch r22.slurm
+
+
 # compressing
 > gzz
 for F in *.postAlleles;do echo "gzip -f $F " >>gzz;done
@@ -66,6 +87,7 @@ sbatch gzz.slurm
 # rf.traits : reef type, "I" (0) vs "M" (1)
 # zz8.ibsMat
 # bams.qc
+ 
  
 # get glmnet packade for R below 3.6 here: https://packages.debian.org/source/stable/r-cran-glmnet 
 
