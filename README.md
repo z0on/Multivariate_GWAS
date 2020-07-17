@@ -81,7 +81,7 @@ Also, unless *plots=FALSE* option was given, there will be *_plots.pdf* files ge
 
 ![bp](back_predict_rr_betas.png)
 * Predicted vs observed trait, using prediction from regularized regression model.  
->**NOTE:** In this run, the last three plots are more like a sanity check rather than actual test of prediction power, because the trait is predicted **in the same samples** that were used to derive predictions. To do this properly, must predict trait in "hold-out" samples, that were NOT used for deriving predictions (see next section).
+>**NOTE:** In this run, the last three plots are more like a sanity check rather than actual test of prediction power, because the trait is predicted **in the same samples** that were used to derive predictions. This always works too well! To check our prediction power properly, we must predict the trait in "hold-out" samples, that were NOT used for deriving predictions (see next section).
 
 To combine all chromosomes together and plot genome-wide manhattan plot (the plot only uses contigs with "chr" in the name!):
 ```bash
