@@ -74,10 +74,13 @@ Also, unless *plots=FALSE* option was given, there will be *_plots.pdf* files ge
 ![pruned manhattan](pruned_manhattan.png)
 * Manhattan plot for distace-pruned top-zscore SNPs. Pruning follows the same procedure as LD-clumping but with physical distances instead of LD (LD stuff is currently in the works). In short, out of SNPs with z-score exceeding 2, we choose the best-zscore SNP, remove all SNPs within *prune.dist* from it that have the same z-score sign, repeat for next-best remaining SNP, and so on. *prune.dist* is the argument to *RDA_GWAS.R*, default is 50000.
 
+![zscan](back_predict_zscan.png)  ![bp](back_predict_simple_betas.png)      ![bp](back_predict_rr_betas.png)
+* Manhattan plot for distace-pruned top-zscore SNPs. Pruning follows the same procedure as LD-clumping but with physical distances instead of LD (LD stuff is currently in the 
+
 To combine all chromosomes together and plot genome-wide manhattan plot (the plot only uses contigs with "chr" in the name!):
 ```bash
 ls *_pd.RData >pds
-Rscript compile_chromosomes.R in=pds
+Rscript compile_chromosomes.R reps=pds
 ```
 ## Run with hold-out samples ##
 The idea is to withold some samples from the analysis and use them later to test whether we can predict the trait in them from their genotypes. This is a bit more involved. First, we need to list hold-out sample names in a file. We might wish to make many such files listing randomly picked hold-out samples. So we will have a bunch of sample-listing files named, for example, *rep10_25* - which would be 10th replicate of witholding 25 samples. We might also need to make replicate-specific tables of covariates, especially if they include unconstrained MDSes - those we are supposed to compute based on the dataset *without the hold-out samples*. See *write_holdout_reps.R* for example R code (*spaghetti warning...*). 
