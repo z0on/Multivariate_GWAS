@@ -86,7 +86,7 @@ Also, unless `plots=FALSE` option was given, there will be `[outfile]_plots.pdf`
 To combine all chromosomes together and plot genome-wide manhattan plot (the plot only uses contigs with "chr" in the name!):
 ```bash
 ls *_pd.RData >pds
-Rscript compile_chromosomes.R reps=pds
+Rscript compile_chromosomes.R in=pds
 ```
 ## Run with hold-out samples ##
 The idea is to withold some samples from the analysis and use them later to test whether we can predict the trait in them from their genotypes. This is a bit more involved. First, we need to list hold-out sample names in a file. We might wish to make many such files listing randomly picked hold-out samples. So we will have a bunch of sample-listing files named, for example, `rep10_25` - which would be 10th replicate of witholding 25 samples. We might also need to make replicate-specific tables of covariates, especially if they include unconstrained MDSes - those we are supposed to compute based on the dataset *without the hold-out samples*. See 'write_holdout_reps.R' for example R code (*spaghetti warning...*). 
