@@ -67,7 +67,7 @@ Also, unless `plots=FALSE` option was given, there will be `[outfile]_plots.pdf`
 ![snp scores](snp_ordination.png)
 * SNP scores in the same ordination space: CAP1 (trait) vs MDS100 (noise). Colored rings are increasing z-scores of distance from 0, the outmost ring is z > 5. The idea is to check if the cloud is more extended / has more outliers along CAP1 compared to MDS100.
 
-![raw manhattan](raw_mahnattan.png)
+![raw manhattan](raw_manhattan.png)
 * Manhattan plot of all analyzed sites. Adjusted p-values are supposed to be genome-wide, if the total number of analyzed SNPs (across the whole genome) was supplied to *RDA_GWAS.R* as *nsites=1234567* argument.
 
 ![pruned manhattan](pruned_manhattan.png)
