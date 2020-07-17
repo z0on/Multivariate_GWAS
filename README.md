@@ -145,22 +145,22 @@ angsd -b bams.qc -GL 1 $FILTERS $TODO -P 12 -out zz8
 ```
 >If this runs out of memory, try reducing `-P` , all the way to `-P 1`.
 
-The output file `zz8.ibsMat` is the genetic distances matrix (identity-by-state) that we can use for GWAS here. The file `zz8.geno.gz` contains posterior genotypes, but needs to be massaged a bit before we can use it.
+The output file `zz8.ibsMat` is the genetic distances matrix (identity-by-state) that we can use for GWAS here. The file `zz8.geno.gz` contains posterior genotype probabilities, it needs to be massaged a bit before we can use it.
 
 First, let's unarchive it and split by chromosome:
 ```bash
 zcat zz8.geno.gz | awk -F, 'BEGIN { FS = "\t" } ; {print > $1".split.geno"}'
 ```
-If you have some short contigs in addition to chromosomes, you might wish to concatenate them together into a separate *unplaced.split.geno* file before proceeding. If your genome is highly fragmented, pre-concatenate it into "fake chromosomes" before mapping (see [`concat_fasta.pl`](https://github.com/z0on/2bRAD_denovo/blob/master/concatFasta.pl).
+If you have some short contigs in addition to chromosomes, you might wish to concatenate them together into a separate `unplaced.split.geno` file before proceeding. If your genome is highly fragmented, pre-concatenate it into "fake chromosomes" before mapping (see [`concat_fasta.pl`](https://github.com/z0on/2bRAD_denovo/blob/master/concatFasta.pl).
 
-Now, we need to calculate posterior number of minor alleles:
+Then, we calculate posterior number of minor alleles:
 ```bash
 >bychrom
 for GF in *.split.geno; do
 echo "awk '{ printf \$1\"\\t\"\$2; for(i=4; i<=NF-1; i=i+3) { i2=i+1; printf \"\\t\"\$i+2*\$i2} ; printf \"\\n\";}' $GF > ${GF/.split.geno/}.postAlleles" >>bychrom
 done
 ```
-Execute all lines in `bychrom`, and we got ourselves genotype data tables.
+Execute all lines in `bychrom`, and we got ourselves genotype data tables suitable for `RDA_GWAS.R`.
 
 You might wish to compress them, for tidyness, although it is not necessary for `RDA_GWAS.R`:
 ```bash
