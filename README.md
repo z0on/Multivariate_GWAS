@@ -62,7 +62,7 @@ Also, unless ]plots=FALSE] option was given, there will be `[outfile]_plots.pdf`
 > Note: the metod always flips the CAP1 axis so that increase in the trait value (specifically, first column in the *traits* table) corresponds with increase of CAP1 score. Since CAP1 orientation is arbitrary, this does not change anything except making the results easier for a human to comprehend. The plot above is a raw plot, before flipping - the SNP ordination plot below (colored dots in rings) will be a flipped version of this one. 
 
 ![qq plot](qqplot.png)
-* q-q plot of SNP scores along CAP1 compared to SNP scores along a very high-order MDS representing noise. Departure upwards from the red line at the top right corner indicates positive signal, departure downwards in the lower left corner - negative signal. In this case these is some positive signal, but no negative signal.
+* q-q plot of SNP scores along CAP1 compared to SNP scores along a very high-order MDS representing noise. Departure upwards from the red line at the top right corner indicates positive signal, departure downwards in the lower left corner - negative signal. In this case these is definitely some positive signal, but little or no negative signal.
 
 ![snp scores](snp_ordination.png)
 * SNP scores in the same ordination space: CAP1 (trait) vs MDS100 (noise). Colored rings are increasing z-scores of distance from 0, the outmost ring is z > 5. The idea is to check if the cloud is more extended / has more outliers along CAP1 compared to MDS100.
