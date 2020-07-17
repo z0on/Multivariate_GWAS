@@ -49,13 +49,13 @@ done
 Execute all commands in `allchroms` (preferably in parallel)
 
 This will generate RData bundles, one for each chromosome, containing the following R objects:
-* ]out] : results table for pruned SNPs containing zscores, pvalues, betas (for simple linear model and elastic net regression), and r-squares for lm regressions;
-* ]gt.s] : genotypes of chosen SNPs;
-* ]gt.test] : genotypes of hold-out samples (if any) at the selected SNPs;
-* ]manh] : manhattan plot data (zscores, pvalues) for ALL analyzed sites;
-* ]sample.scores] : sample scores along the first constrained ordination axis.
+* `out` : results table for pruned SNPs containing zscores, pvalues, betas (for simple linear model and elastic net regression), and r-squares for lm regressions;
+* `gt.s` : genotypes of chosen SNPs;
+* `gt.test` : genotypes of hold-out samples (if any) at the selected SNPs;
+* `manh` : manhattan plot data (zscores, pvalues) for ALL analyzed sites;
+* `sample.scores` : sample scores along the first constrained ordination axis.
 
-Also, unless ]plots=FALSE] option was given, there will be `[outfile]_plots.pdf` files generated for each chromosome, containing the following plots:
+Also, unless `plots=FALSE` option was given, there will be `[outfile]_plots.pdf` files generated for each chromosome, containing the following plots:
 
 ![sample ordination](sample_ordination.png)
 * constrained ordination plot for samples, and the trait(s) vector(s). The analysis uses sample scores along the first constrained axis, CAP1, but multiple correlated traits can be used to define it. 
