@@ -96,18 +96,18 @@ options(datatable.fread.datatable=FALSE)
 
 #---- reading and aligning data
 
- # setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS")
-        # gtfile = "chr7.postAlleles.gz"
-        # covars = "mds2_14_25"
-        # traits = "pd.traits"
-        # bams = "bams.qc"
-        # ibs="zz8.ibsMat"
-        # outfile="c7pd.RData"
-        # plots=TRUE
-        # nsites=5500000
-        # prune.dist=50000
-        # hold.out="rep14_25"
- #       hold.out=0
+  setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS")
+         gtfile = "chr7.postAlleles.gz"
+         covars = "mds2"
+         traits = "bleach.traits"
+         bams = "bams.qc"
+         ibs="zz8.ibsMat"
+         outfile="c7bl.RData"
+         plots=TRUE
+         nsites=5500000
+         prune.dist=50000
+         hold.out="rep14_25"
+        hold.out=0
 
 bams=scan(bams,what="character")
 #removing path
@@ -237,7 +237,6 @@ getEmpP <- function(Obs, Null,nq=10000){
 	LN=length(Null)
 	logq=1+log(seq(1/nq,1,1/nq),nq+1)
 	qn=quantile(Null,logq)
-	length(qn)
 	perq=length(Null)/nq
 	lastnull=Null[Null>qn[nq-1]]
  	pvals=c()
@@ -270,6 +269,31 @@ nulls=stack(nulls)$values
 message("calculating pvalues...")
 pvals=getEmpP(snp.scores,nulls)
 
+#--------- manhattan plot function
+
+manhat=function(mh) {
+	mh=mh[grep("chr",mh$chrom),]
+	mh$chrN=gsub("\\D","",mh$chrom)
+	mh$chrom=factor(mh$chrom,levels=unique(mh$chrom)[order(as.numeric(unique(mh$chrN)))])
+	sign=as.numeric(mh$zscore>0)
+	sign[sign==0]=-1
+	mh$pos.Mb=mh$pos/1e+6
+	mh$signed.logp=mh$logp*sign
+	mh$logp.adj[mh$logp.adj>2]=2
+	mh$lpa2=(mh$logp.adj)^3
+	pp=ggplot(mh,aes(pos.Mb,abs(zscore)))+
+		geom_point(shape = 21, colour = "grey20", aes(size=lpa2,fill=signed.logp))+
+	    scale_size_continuous(limits=c(0,8),breaks=c(0.3,0.6,1,1.3,2)^3,labels=c(0.5,0.25,0.1,0.05,1e-2))+
+	  #  scale_size_continuous(limits=c(0,3),breaks=c(1,1.3,2),labels=c(0.1,0.05,1e-2))+
+		scale_fill_gradient(low="cyan3",high="coral")+
+		theme_bw() + labs(size = "p.adj")+theme(axis.text.x=element_text(angle=45, hjust=1))+
+		ylim(min(abs(mh$zscore)),max(c(10,max(abs(mh$zscore)))))+
+#		ggtitle(paste(gtfile,"z > 3"))+
+		xlab("position,Mb")+facet_grid(~chrom,scale="free_x",space="free_x")
+	return(pp)
+}
+
+
 #--------- manhattan plot (by chromosome)
 
 logp=-log(pvals,10)
@@ -281,22 +305,11 @@ manh=data.frame(cbind(chrom,pos,"zscore"=snp.scores,logp,logp.adj),stringsAsFact
 manh$zscore =as.numeric(manh$zscore)
 manh$logp=as.numeric(manh$logp)
 manh$logp.adj=as.numeric(manh$logp.adj)
-manh$pos.kb=as.numeric(manh$pos)/1000
-manh$pos.Mb=manh$pos.kb/1000
+manh$pos=as.numeric(manh$pos)
 manh$chrom=as.factor(manh$chrom)
 
 if(plots) {
-	for (chr in levels(manh$chrom)) { 
-		mc=subset(manh,chrom==chr)
-		pp=ggplot(mc,aes(pos.Mb,logp))+
-			geom_point(shape = 21, colour = "grey20", aes(size=logp.adj,fill=zscore))+
-		    scale_size_continuous(limits=c(0,3),breaks=c(0.3,0.6,1,1.3,2),labels=c(0.5,0.25,0.1,0.05,1e-2))+
-			scale_fill_gradient(low="cyan3",high="coral")+
-			theme_bw() + labs(size = "p.adj")+
-			ylim(0,max(c(7,max(manh$logp))))+ggtitle(paste(chr,"raw"))+
-			xlab("position,Mb")
-		plot(pp)
-	}
+	plot(manhat(manh[abs(manh$zscore)>2,]))
 }
 
 #----------- pruning SNPs by z-scores and distance, computing simple betas and r2s (by chromosome)
@@ -346,9 +359,11 @@ message("      ",length(sorted)," blips")
 	bs=append(bs,b)
 }
 
+# ----- assembling 'out' table
+
 out=data.frame(cbind(zscore=tops.scores,pvals=pvals[blips],padj=padj[blips],beta=bs,r2=r2s),stringsAsFactors=F)
 row.names(out)=row.names(gt[blips,])
-out$chr=as.factor(sub(":.+","",row.names(gt[blips,])))
+out$chrom=as.factor(sub(":.+","",row.names(gt[blips,])))
 out$pos=as.numeric(sub(".+:","",row.names(gt[blips,])))
 out=out[!(bs==0),]
 out$logp=-log(out$pvals,10)
@@ -357,21 +372,10 @@ message("\n",nrow(out)," independent blips collected")
 gt.s=gt[row.names(out),]
 if(hold.out!=0) { gt.test=gt.test[row.names(out),] }
 
-#------ replotting pruned manhattan plot
+# replotting pruned manhattan plot
 
 if (plots) { 
-	out$pos.Mb=out$pos/1e+6
-	for (ch in levels(out$chr)) { 
-		mc=out[out$chr==ch,]
-		pp=ggplot(mc,aes(pos.Mb,logp))+
-			geom_point(shape = 21, colour = "grey20", aes(size=logp.adj,fill=zscore))+
-		    scale_size_continuous(limits=c(0,3),breaks=c(0.3,0.6,1,1.3,2),labels=c(0.5,0.25,0.1,0.05,1e-2))+
-			scale_fill_gradient(low="cyan3",high="coral")+
-			theme_bw() + labs(size = "p.adj")+
-			ylim(min(mc$logp),max(c(7,max(mc$logp))))+ggtitle(paste(ch,"pruned"))+
-			xlab("position,Mb")
-		plot(pp)
-	}
+	plot(manhat(out))
 }
 
 #------- regularized regression
