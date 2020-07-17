@@ -67,15 +67,21 @@ Also, unless *plots=FALSE* option was given, there will be *_plots.pdf* files ge
 ![snp scores](snp_ordination.png)
 * SNP scores in the same ordination space: CAP1 (trait) vs MDS100 (noise). Colored rings are increasing z-scores of distance from 0, the outmost ring is z > 5. The idea is to check if the cloud is more extended / has more outliers along CAP1 compared to MDS100.
 
-
 ![raw manhattan](raw_mahnattan.png)
 * Manhattan plot of all analyzed sites. Adjusted p-values are supposed to be genome-wide, if the total number of analyzed SNPs (across the whole genome) was supplied to *RDA_GWAS.R* as *nsites=1234567* argument.
 
 ![pruned manhattan](pruned_manhattan.png)
 * Manhattan plot for distace-pruned top-zscore SNPs. Pruning follows the same procedure as LD-clumping but with physical distances instead of LD (LD stuff is currently in the works). In short, out of SNPs with z-score exceeding 2, we choose the best-zscore SNP, remove all SNPs within *prune.dist* from it that have the same z-score sign, repeat for next-best remaining SNP, and so on. *prune.dist* is the argument to *RDA_GWAS.R*, default is 50000.
 
-![zscan](back_predict_zscan.png)  ![bp](back_predict_simple_betas.png)      ![bp](back_predict_rr_betas.png)
-* Manhattan plot for distace-pruned top-zscore SNPs. Pruning follows the same procedure as LD-clumping but with physical distances instead of LD (LD stuff is currently in the 
+![zscan](back_predict_zscan.png)  
+* Change in trait prediction accuracy when relaxing z-score cutoff (from just the few top-zscore SNPs to a whole lot of SNPs including those with much worse zscore)  
+
+![bp](back_predict_simple_betas.png)  
+* Predicted vs observed trait, using prediction from simple lm model.  
+
+![bp](back_predict_rr_betas.png)
+* Predicted vs observed trait, using prediction from regularized regression model.  
+>**NOTE:** In this run, the last three plots are more like a sanity check rather than actual test of prediction power, because the trait is predicted **in the same samples** that were used to derive predictions. To do this properly, must predict trait in "hold-out" samples, that were NOT used for deriving predictions (see next section).
 
 To combine all chromosomes together and plot genome-wide manhattan plot (the plot only uses contigs with "chr" in the name!):
 ```bash
