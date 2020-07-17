@@ -49,13 +49,13 @@ done
 Execute all commands in `allchroms` (preferably in parallel)
 
 This will generate RData bundles, one for each chromosome, containing the following R objects:
-* ]out] : results table for pruned SNPs containing zscores, pvalues, betas (for simple linear model and elastic net regression), and r-squares for lm regressions;
-* ]gt.s] : genotypes of chosen SNPs;
-* ]gt.test] : genotypes of hold-out samples (if any) at the selected SNPs;
-* ]manh] : manhattan plot data (zscores, pvalues) for ALL analyzed sites;
-* ]sample.scores] : sample scores along the first constrained ordination axis.
+* `out` : results table for pruned SNPs containing zscores, pvalues, betas (for simple linear model and elastic net regression), and r-squares for lm regressions;
+* `gt.s` : genotypes of chosen SNPs;
+* `gt.test` : genotypes of hold-out samples (if any) at the selected SNPs;
+* `manh` : manhattan plot data (zscores, pvalues) for ALL analyzed sites;
+* `sample.scores` : sample scores along the first constrained ordination axis.
 
-Also, unless ]plots=FALSE] option was given, there will be `[outfile]_plots.pdf` files generated for each chromosome, containing the following plots:
+Also, unless `plots=FALSE` option was given, there will be `[outfile]_plots.pdf` files generated for each chromosome, containing the following plots:
 
 ![sample ordination](sample_ordination.png)
 * constrained ordination plot for samples, and the trait(s) vector(s). The analysis uses sample scores along the first constrained axis, CAP1, but multiple correlated traits can be used to define it. 
@@ -86,7 +86,7 @@ Also, unless ]plots=FALSE] option was given, there will be `[outfile]_plots.pdf`
 To combine all chromosomes together and plot genome-wide manhattan plot (the plot only uses contigs with "chr" in the name!):
 ```bash
 ls *_pd.RData >pds
-Rscript compile_chromosomes.R reps=pds
+Rscript compile_chromosomes.R in=pds
 ```
 ## Run with hold-out samples ##
 The idea is to withold some samples from the analysis and use them later to test whether we can predict the trait in them from their genotypes. This is a bit more involved. First, we need to list hold-out sample names in a file. We might wish to make many such files listing randomly picked hold-out samples. So we will have a bunch of sample-listing files named, for example, `rep10_25` - which would be 10th replicate of witholding 25 samples. We might also need to make replicate-specific tables of covariates, especially if they include unconstrained MDSes - those we are supposed to compute based on the dataset *without the hold-out samples*. See 'write_holdout_reps.R' for example R code (*spaghetti warning...*). 
@@ -145,22 +145,22 @@ angsd -b bams.qc -GL 1 $FILTERS $TODO -P 12 -out zz8
 ```
 >If this runs out of memory, try reducing `-P` , all the way to `-P 1`.
 
-The output file `zz8.ibsMat` is the genetic distances matrix (identity-by-state) that we can use for GWAS here. The file `zz8.geno.gz` contains posterior genotypes, but needs to be massaged a bit before we can use it.
+The output file `zz8.ibsMat` is the genetic distances matrix (identity-by-state) that we can use for GWAS here. The file `zz8.geno.gz` contains posterior genotype probabilities, it needs to be massaged a bit before we can use it.
 
 First, let's unarchive it and split by chromosome:
 ```bash
 zcat zz8.geno.gz | awk -F, 'BEGIN { FS = "\t" } ; {print > $1".split.geno"}'
 ```
-If you have some short contigs in addition to chromosomes, you might wish to concatenate them together into a separate *unplaced.split.geno* file before proceeding. If your genome is highly fragmented, pre-concatenate it into "fake chromosomes" before mapping (see [`concat_fasta.pl`](https://github.com/z0on/2bRAD_denovo/blob/master/concatFasta.pl).
+If you have some short contigs in addition to chromosomes, you might wish to concatenate them together into a separate `unplaced.split.geno` file before proceeding. If your genome is highly fragmented, pre-concatenate it into "fake chromosomes" before mapping (see [`concat_fasta.pl`](https://github.com/z0on/2bRAD_denovo/blob/master/concatFasta.pl).
 
-Now, we need to calculate posterior number of minor alleles:
+Then, we calculate posterior number of minor alleles:
 ```bash
 >bychrom
 for GF in *.split.geno; do
 echo "awk '{ printf \$1\"\\t\"\$2; for(i=4; i<=NF-1; i=i+3) { i2=i+1; printf \"\\t\"\$i+2*\$i2} ; printf \"\\n\";}' $GF > ${GF/.split.geno/}.postAlleles" >>bychrom
 done
 ```
-Execute all lines in `bychrom`, and we got ourselves genotype data tables.
+Execute all lines in `bychrom`, and we got ourselves genotype data tables suitable for `RDA_GWAS.R`.
 
 You might wish to compress them, for tidyness, although it is not necessary for `RDA_GWAS.R`:
 ```bash
