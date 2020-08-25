@@ -15,7 +15,9 @@ The genotype file needed to run exmple code below, `chr14.postAlleles.gz`, is he
 
 `gt=[filename]` Genotypes: table of minor allele counts in each sample (rows - loci, columns - samples). The first two columns must be chromosome, position. Header line must be present (chr, pos, sample names). I recommend running the method on `gt` files for individual chromosomes, to use less memory and to run it in parallel. (see **Appendix** about how to get this from **`angsd`**)
 
-`covars=[filename]`  Table of covariates (rows - samples, columns - covariates). First column must be sample names. Header line must be present (sample, names of covariates). May not fully match the genotype table - the script will match them using the `sample` column. Rows containing NA will be removed.
+`covars.e=[filename]`  Table of NON-GENETIC covariates (e.g. sampling time, age of individual). These will be regressed out of traits. Rows - samples, columns - covariates. First column must be sample names. Header line must be present (sample, names of covariates). May not fully match the genotype table - the script will match them using the `sample` column. Rows containing NA will be removed.
+
+`covars.g=[filename]`  Table of NON-GENETIC covariates (e.g. sequencing batch, read depth, first couple of genetic PCs). These will be regressed out of genotypes. Same format as `covars.e`.
 
 `traits=[filename]` Table of trait(s). First column must be sample names. There must be at least 2 columns (samples, 1 trait). Header line must be present (sample, names of traits). Just like `covars`, this table may not fully match the genotype table; rows containing NAs will be removed.
 
@@ -27,13 +29,11 @@ The genotype file needed to run exmple code below, `chr14.postAlleles.gz`, is he
 
 ### Other *RDA_GWAS.R* arguments
 
-`outfile=[filename]`  Output file name.
-
 `plots=TRUE` Whether to plot diagnostic plots (`[outfile]_plots.pdf`).
 
 `nsites=5500000` Total number of sites *acros the whole genome* that are being analyzed - this is to compute genome-wide FDR (Benjamini-Hochberg method).
 
-`prune.dist=50000` Pruning distance (chosen SNPs must be at least that far apart).
+`prune.dist=50000` Pruning distance (selected SNPs must be at least that far apart). Alternatively, an RData bundle containing object *rdlm*, output of `LDq.R` script - distance to R2 dropoff below 0.1 for each point in the genome.
 
 ## Simple run, for a whole dataset (without hold-out samples) ## 
 Assuming we have multiple `*.postAlleles.gz` files with genotypes, one file per chromosome:
@@ -43,29 +43,24 @@ for CHR in `ls *postAlleles.gz`; do
 # removing everything from the file name after the first non-alphanumeric character, to get neater output names
 OUTN=`echo $CHR | perl -pe 's/^([\w\d]+)\\..+/$1/'`;
 # writing down a list of calls to RDA_GWAS.R, for each chromosome
-echo "Rscript RDA_GWAS.R gt=$CHR covars=mds2 traits=pd.traits gdist.samples=bams.qc gdist=zz8.ibsMat outfile=${OUTN}_pd.RData">>allchroms;
+echo "Rscript RDA_GWAS.R gt=$CHR covars.e=reefsites covars.g=technical.covars  traits=pd.traits gdist.samples=bams.qc gdist=zz8.ibsMat">>allchroms;
 done
 ```
 Execute all commands in `allchroms` (preferably in parallel)
 
-This will generate RData bundles, one for each chromosome, containing the following R objects:
-* `out` : results table for pruned SNPs containing zscores, pvalues, betas (for simple linear model and elastic net regression), and r-squares for lm regressions;
-* `gt.s` : genotypes of chosen SNPs;
-* `gt.test` : genotypes of hold-out samples (if any) at the selected SNPs;
-* `manh` : manhattan plot data (zscores, pvalues) for ALL analyzed sites;
-* `sample.scores` : sample scores along the first constrained ordination axis.
+This will generate RData files with extension `_gwas.RData`, one for each chromosome, containing `gwas` object, which is a dataframe for all analyzed SNPs containing zscores, pvalues, ldpruned flag (1 if the site was retained after pruning), betas (for simple linear model - *beta* - and elastic net regression - *beta.rr*), and r-squares for lm regressions.
 
-Also, unless `plots=FALSE` option was given, there will be `[outfile]_plots.pdf` files generated for each chromosome, containing the following plots:
+Also, unless `plots=FALSE` option was given, there will be `_plots.pdf` files generated for each chromosome, containing the following plots:
 
 ![sample ordination](sample_ordination.png)
-* constrained ordination plot for samples, and the trait(s) vector(s). The analysis uses sample scores along the first constrained axis, CAP1, but multiple correlated traits can be used to define it. 
+* constrained ordination plot for samples, and the trait(s) vector(s). The analysis uses sample scores along the first constrained axis, CAP1, but multiple correlated traits can be used to define it. The coral-colored symbols are "linear combination" scores that are direct projectons of samples on the trait vectors, and light blue points are weighted average scores that take into account sample genotypes (these are actually used as the trait surrogate by the method). 
 > Note: the metod always flips the CAP1 axis so that increase in the trait value (specifically, first column in the *traits* table) corresponds with increase of CAP1 score. Since CAP1 orientation is arbitrary, this does not change anything except making the results easier for a human to comprehend. The plot above is a raw plot, before flipping - the SNP ordination plot below (colored dots in rings) will be a flipped version of this one. 
 
 ![qq plot](qqplot.png)
 * q-q plot of SNP scores along CAP1 compared to SNP scores along a very high-order MDS representing noise. Departure upwards from the red line at the top right corner indicates positive signal, departure downwards in the lower left corner - negative signal. In this case these is definitely some positive signal, but little or no negative signal.
 
 ![snp scores](snp_ordination.png)
-* SNP scores in the same ordination space: CAP1 (trait) vs MDS100 (noise). Colored rings are increasing z-scores of distance from 0, the outmost ring is z > 5. The idea is to check if the cloud is more extended / has more outliers along CAP1 compared to MDS100.
+* SNP scores in the same ordination space: CAP1 (trait) vs MDS100 (noise). Colored rings are increasing z-scores of distance from 0, the outmost ring is z > 5. The idea is to check if the cloud is more extended / has more outliers along CAP1 compared to MDS100 (which is clearly the case here).
 
 ![raw manhattan](raw_manhattan.png)
 * Manhattan plot of all analyzed sites. Adjusted p-values are supposed to be genome-wide, if the total number of analyzed SNPs (across the whole genome) was supplied to *RDA_GWAS.R* as *nsites=1234567* argument.
@@ -73,7 +68,7 @@ Also, unless `plots=FALSE` option was given, there will be `[outfile]_plots.pdf`
 ![pruned manhattan](pruned_manhattan.png)
 * Manhattan plot for distace-pruned top-zscore SNPs. Pruning follows the same procedure as LD-clumping but with physical distances instead of LD (LD stuff is currently in the works). In short, out of SNPs with z-score exceeding 2, we choose the best-zscore SNP, remove all SNPs within `prune.dist` from it that have the same z-score sign, repeat for next-best remaining SNP, and so on. `prune.dist` is the argument to `RDA_GWAS.R`, default is 50000.
 
-![zscan](back_predict_zscan.png)  
+![NsnpScan](nSNPscan.png)  
 * Change in trait prediction accuracy when relaxing z-score cutoff (from just the few top-zscore SNPs to a whole lot of SNPs including those with much worse zscore)  
 
 ![bp](back_predict_simple_betas.png)  
