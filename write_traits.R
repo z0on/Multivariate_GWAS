@@ -29,5 +29,6 @@ write.table(pdmds2,file="pdmds2",quote=F,row.names=F)
 
 
 covars=read.table("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/simple.covars",header=T,stringsAsFactors=F)
-head(covars)
+str(covars)
 write.table(covars[,c(1,3,4)],file="~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/technical.covars",quote=F,row.names=F)
+write.table(covars[,c(1,2)],file="~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/reefsites",quote=F,row.names=F)

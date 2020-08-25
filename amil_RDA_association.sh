@@ -33,10 +33,27 @@ echo '#!/bin/bash
 angsd -b bams.qc -GL 1 $FILTERS $TODO8 -P 12 -out zz8' > zz8
 zz8job=$(sbatch zz8 | grep "Submitted batch job" | perl -pe 's/\D//g')
 
+# to make BCF file (not needed typically, skip this)
+export FILTERS="-uniqueOnly 1 -remove_bads 1 -skipTriallelic 1 -minMapQ 20 -minQ 20 -dosnpstat 1 -doHWE 1 -maxHetFreq 0.5 -sb_pval 1e-5 -hetbias_pval 1e-5 -minInd 152 -snp_pval 1e-5 -minMaf 0.05 "
+export TODO1="-gl 1 -dopost 1 -domajorminor 1 -domaf 1 -dobcf 1 --ignore-RG 0 -dogeno 1 -docounts 1"
+echo '#!/bin/bash
+#SBATCH -J zz1
+#SBATCH -n 1
+#SBATCH -N 1
+#SBATCH -p development
+#SBATCH -o zz1.o%j
+#SBATCH -e zz1.e%j
+#SBATCH -t 2:00:00
+#SBATCH -A tagmap
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=matz@utexas.edu
+angsd -b bams.qc -r chr1 $FILTERS $TODO1 -P 6 -out zz1' > zz1
+sbatch zz1
+
 
 # splitting zz8,geno.gz by chromosome
 zcat zz8.geno.gz | awk -F, 'BEGIN { FS = "\t" } ; {print > $1".split.geno"}'  
-
+# concatenating small contigs
 for i in `seq 0 9`;do
 cat x*Sc0000${i}*geno >xSc0000${i}.pool.split.geno;
 done
@@ -52,18 +69,8 @@ for GF in *.split.geno; do
 echo "awk '{ printf \$1\"\\t\"\$2; for(i=4; i<=NF-1; i=i+3) { i2=i+1; printf \"\\t\"\$i+2*\$i2} ; printf \"\\n\";}' $GF > ${GF/.split.geno/}.postAlleles" >>bychrom
 done
 
-# ------ calculating LD
 
-module load gsl
-NB=`cat bams.qc | wc -l`
->ld
-KBDIST=25
-for GF in *.split.geno; do echo "cut -f 1,2 $GF > ${GF}.sites && NS=\`wc -l $GF\` && gzip $GF && ngsLD --geno ${GF}.gz --probs 1 --n_ind $NB --pos ${GF}.sites --n_sites \$NS --max_kb_dist $KBDIST --out ${GF}.LD --n_threads 4 ">> ld; done
-cat ld
-ls5_launcher_creator.py -j ld -n ld -a tagmap -t 2:00:00 -w 6 -e matz@utexas.edu
-sbatch ld.slurm
-
-# removing extra columns, collecting pairs of sites with r2>0.05
+# removing extra columns
 >r22
 for F in *split.geno.LD; do
 #echo "cat $F | awk '\$7>=0.05' | cut -f 1,2,3,7 >${F/.*/}.r2">>r22;
@@ -88,7 +95,37 @@ sbatch gzz.slurm
 # zz8.ibsMat
 # bams.qc
  
- 
+# ------ calculating LD and distance where R2 drops below 0.1 (skip this if you want to simply use fixed LD clumping distance)
+
+# subsetting geno files for maf>=0.1
+MAF=0.1
+>tomaf
+for GF in *.split.geno.gz; do
+echo "zcat $GF | awk -v maf=$MAF '{ sum=0; for(i=4; i<=NF-1; i=i+3) { i2=i+1; sum+=(\$i+2*\$i2) } ; af=sum/(2*(NF-2)/3); if (af>=maf) { print } }' | gzip > ${GF/.split.geno.gz/}.maf01.geno.gz" >>tomaf
+done
+ls5_launcher_creator.py -j tomaf -n tomaf -a tagmap -t 0:10:00 -w 24 -e matz@utexas.edu
+sbatch tomaf.slurm
+
+# calculating LD within 25kb distance
+module load gsl
+NB=`cat bams.qc | wc -l`
+>ld
+KBDIST=25
+for GF in *.maf01.geno.gz; do echo "zcat $GF | cut -f 1,2 > ${GF}.sites && NS=\`wc -l ${GF}.sites\` && ngsLD --geno $GF --probs 1 --n_ind $NB --pos ${GF}.sites --n_sites \$NS --max_kb_dist $KBDIST --out ${GF}.LD --n_threads 4 ">> ld; done
+ls5_launcher_creator.py -j ld -n ld -a tagmap -t 2:00:00 -w 6 -e matz@utexas.edu
+sbatch ld.slurm
+
+# obtaining LD loess (distance at which R2 drops below 0.05)
+>ldl
+for GF in chr*.maf01.geno.gz.LD; do 
+echo "Rscript LDq.R $GF">> ldl; 
+done
+ls5_launcher_creator.py -j ldl -n ldl -a tagmap -t 2:00:00 -w 4 -e matz@utexas.edu
+sbatch ldl.slurm
+
+
+#-----------
+
 # get glmnet packade for R below 3.6 here: https://packages.debian.org/source/stable/r-cran-glmnet 
 
 # running 50 hold-out replicates on all chromosomes for proportion of D
