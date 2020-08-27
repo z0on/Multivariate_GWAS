@@ -93,7 +93,7 @@ Rscript compile_chromosomes.R in=grs gt=gts gt.samples=bams.qc traits=traits_etc
 ```
 Additional options to `compile_chromosomes.R` are `runGLMnet=F` to suppress rerunning the elastic net regression and simply reuse per-chromosome betas, and `forceAlpha`, which must be the number between 0 and 1 and fixes the alpha parameter of the elastic net (by default the optimal alpha is determined based on hold-out sample set).
 
-`compile_chromosomes.R` saves the combined gwas data taable in `*_gwas.RData`. It also saves the table of two kinds of predictions: lm (linear model), rr (elastic net regression), and true trait values (after regressing environmental covariates within `RDA_GWAS.R`) in `*_predictions.RData`.
+`compile_chromosomes.R` saves the combined gwas data table in `*_gwas.RData`. It also saves the table of two kinds of predictions: lm (linear model), rr (elastic net regression), and true trait values (after regressing out environmental covariates within `RDA_GWAS.R`) in `*_predictions.RData`.
 
 ## Multiple hold-out replicates ##
 To properly estimate prediction accurcy, we would want to run multiple analyses like the one described above with randomly picked hold-out samples. This sounds a bit tedious but not actually difficult with a bit of bash scripting. One simply need to repeat the above analysis 100 times for different hold-out sample sets, and then put together all the generated `*_predictions.RData`tables.
