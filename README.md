@@ -40,10 +40,7 @@ Assuming we have multiple `*.postAlleles.gz` files with genotypes, one file per 
 ```bash
 >allchroms
 for CHR in `ls *postAlleles.gz`; do
-# removing everything from the file name after the first non-alphanumeric character, to get neater output names
-OUTN=`echo $CHR | perl -pe 's/^([\w\d]+)\\..+/$1/'`;
-# writing down a list of calls to RDA_GWAS.R, for each chromosome
-echo "Rscript RDA_GWAS.R gt=$CHR covars.e=reefsites covars.g=technical.covars  traits=pd.traits gdist.samples=bams.qc gdist=zz8.ibsMat">>allchroms;
+echo "Rscript ~/bin/RDA_GWAS.R gt=$CHR covars.e=reefsites covars.g=technical.covars traits=pd.traits gdist.samples=bams.qc gdist=zz8.ibsMat">>allchroms;
 done
 ```
 Execute all commands in `allchroms` (preferably in parallel)
@@ -89,14 +86,40 @@ The example below first writes down the two file-lists and then runs `compile_ch
 ```bash
 ls chr*_gwas.RData >gws
 ls chr*postAlleles.gz >gts
-Rscript compile_chromosomes.R in=grs gt=gts gt.samples=bams.qc traits=traits_etc_0.RData
+Rscript ~/bin/compile_chromosomes.R in=grs gt=gts gt.samples=bams.qc traits=traits_etc_0.RData
 ```
 Additional options to `compile_chromosomes.R` are `runGLMnet=F` to suppress rerunning the elastic net regression and simply reuse per-chromosome betas, and `forceAlpha`, which must be the number between 0 and 1 and fixes the alpha parameter of the elastic net (by default the optimal alpha is determined based on hold-out sample set).
 
 `compile_chromosomes.R` saves the combined gwas data table in `*_gwas.RData`. It also saves the table of two kinds of predictions: lm (linear model), rr (elastic net regression), and true trait values (after regressing out environmental covariates within `RDA_GWAS.R`) in `*_predictions.RData`.
 
 ## Multiple hold-out replicates ##
-To properly estimate prediction accurcy, we would want to run multiple analyses like the one described above with randomly picked hold-out samples. This sounds a bit tedious but not actually difficult with a bit of bash scripting. One simply need to repeat the above analysis 100 times for different hold-out sample sets, and then put together all the generated `*_predictions.RData`tables.
+To properly estimate prediction accuracy, we would want to run multiple analyses like the one described above **without randomly picked hold-out samples** and then se if we can predict the trait in those samples based on their genotypes. This sounds a bit tedious but not actually difficult with a bit of bash scripting. One simply need to repeat the above analysis 50 times for different hold-out sample sets, and then put together all the generated `*_predictions.RData`tables.
+
+Assuming we have already ceated 50 files named like rep1_25, rep2_25 etc, each listing 25 randomly picked hold-out samples, we begin with running `RDA_GWAS.R`on each chromosome for each replicate:
+
+```bash
+>pdd
+for R in `seq 1 50`; do
+REP=rep${R}_25;
+for CHR in `ls *postAlleles.gz`; do
+echo "Rscript ~/bin/RDA_GWAS.R gt=$CHR covars.e=reefsites covars.g=technical.covars traits=pd.traits gdist.samples=bams.qc plots=FALSE gdist=zz8.ibsMat hold.out=$REP">>pdd;
+done;
+done
+```
+Execute all commands in `pdd`(definitely in parallel).
+
+The next step is putting all chromosomes together, for each hold-out rep:
+
+```bash
+>compchrom
+ls chr*postAlleles.gz >gts
+for R in `seq 1 50`; do
+REP=rep${R}_25;
+ls chr*${REP}_gwas.RData >gws_${REP};
+echo "Rscript ~/bin/compile_chromosomes.R in=gws_${REP} gt=gts gt.samples=bams.qc traits=traits_etc_${REP}.RData">>compchrom;
+done
+```
+Finally, we need to fire up `R`, concatenate all dataframes from `*_predictions.RData` files, and plot the predictions against truth:
 
 ## Where does it come from?
 This project is based on the idea of using constrained ordination to look for genotype-environment associations, presented in papers by Brenna R. Forester et al: 
