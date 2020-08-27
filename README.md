@@ -48,7 +48,7 @@ done
 ```
 Execute all commands in `allchroms` (preferably in parallel)
 
-This will generate RData files with extension `_gwas.RData`, one for each chromosome, containing `gwas` object, which is a dataframe for all analyzed SNPs containing zscores, pvalues, ldpruned flag (1 if the site was retained after pruning), betas (for simple linear model - *beta* - and elastic net regression - *beta.rr*), and r-squares for lm regressions.
+This will generate RData files with extension `_gwas.RData`, one for each chromosome, containing `gwas` object, which is a dataframe for all analyzed SNPs containing zscores, pvalues, betas for ld-pruned SNPs (for simple linear model - *beta* - and elastic net regression - *beta.rr*), and r-squares for lm regressions. The second saved file - `traits_etc...RData` - contains information about traits and hold-out samples that will be needed to put the results for all chromosomes together.
 
 Also, unless `plots=FALSE` option was given, there will be `_plots.pdf` files generated for each chromosome, containing the following plots:
 
