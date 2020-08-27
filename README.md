@@ -93,7 +93,7 @@ Additional options to `compile_chromosomes.R` are `runGLMnet=F` to suppress reru
 `compile_chromosomes.R` saves the combined gwas data table in `*_gwas.RData`. It also saves the table of two kinds of predictions: lm (linear model), rr (elastic net regression), and true trait values (after regressing out environmental covariates within `RDA_GWAS.R`) in `*_predictions.RData`.
 
 ## Runs with multiple hold-out replicates ##
-To properly estimate prediction accuracy, we would want to run multiple analyses like the one described above **without randomly picked hold-out samples** and then se if we can predict the trait in those samples based on their genotypes. This sounds a bit tedious but not actually difficult with a bit of bash scripting. One simply need to repeat the above analysis 50 times for different hold-out sample sets, and then put together all the generated `*_predictions.RData`tables.
+To properly estimate prediction accuracy, we would want to run multiple analyses like the one described above, each time witholding some samples ("hold-out" samples), and then see how well we can predict the trait in those samples based on their genotypes. This sounds a bit tedious but not actually difficult with a bit of bash scripting. One simply need to repeat the above analysis 50 times for different hold-out sample sets, and then put together all the generated `*_predictions.RData`tables.
 
 Assuming we have already created 50 files named like rep1_25, rep2_25 etc, each listing 25 randomly picked hold-out samples, we begin with running `RDA_GWAS.R`on each chromosome for each replicate:
 
