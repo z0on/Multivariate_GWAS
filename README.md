@@ -81,11 +81,11 @@ Also, unless `plots=FALSE` option was given, there will be `_plots.pdf` files ge
 ## To combine chromosomes together ##
 Technically it is not necessary to run `RDA_GWAS.R` on indivdual chromosomes. It can properly handle mutiple chromosomes, but it will likely be very slow and run out of memory if given more than 2-3 chromosomes at once. Besides, splitting the task into individual chromosomes allows to run the analysis in parallel.
 
-To combine all chromosomes together, there is a script `compile_chromosomes.R`. It will concatenate GWAS results for individual chromosome, rerun the elastic net regression and best-snp-number selection for lm-based preditions, and make predictions for the hold-out sample set (common to all per-chromosome analyses). If not hold-out set was specified, the predictions will be made about the whole dataset itself (just the sanity check, not to be reported). 
+To combine all chromosomes together, there is a script `compile_chromosomes.R`. It will concatenate GWAS results for individual chromosome, rerun the elastic net regression and best-snp-number selection for lm-based preditions, and make predictions for the hold-out sample set (common to all per-chromosome analyses). If no hold-out set was specified, the predictions will be made about the whole dataset itself (just a sanity check, not the actual accuracy demonstration!). 
 
-As input, `compile_chromosomes.R` needs two file-lists (text files listing file names): one for results of `RDA_GWAS.R` with extendion `_gwas.RData`, and another for per-chromosome genotype files, same as used for `RDA_GWAS.R` (e.g., `chr1.postAlleles.gz`). It also needs a file called `traits_etc*.RData`, saved by `RDA_GWAS.R`, which contains information about traits and hold-out samples (argument `traits`), and the list of sample names (argument `gt.samples`) corresponding to the order of samples in genotype files (same as used in `RDA_GWAS.R`).
+As input, `compile_chromosomes.R` needs two file-lists (text files listing file names): one for results of `RDA_GWAS.R` with extension `_gwas.RData`, and another for per-chromosome genotype files, same as used for `RDA_GWAS.R` (e.g., `chr1.postAlleles.gz`). It also needs a file called `traits_etc*.RData`, saved by `RDA_GWAS.R`, which contains information about traits and hold-out samples (argument `traits`), and a list of sample names (argument `gt.samples`) corresponding to the order of samples in genotype files (same as used in `RDA_GWAS.R`).
 
-The example below first writes down the two file-lists and then runs `compile_chromosomes.R`.
+The example below first writes down the two file-lists and then runs `compile_chromosomes.R`:
 ```bash
 ls chr*_gwas.RData >gws
 ls chr*postAlleles.gz >gts
