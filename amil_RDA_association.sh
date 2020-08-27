@@ -18,7 +18,7 @@ module load TACC-largemem
 
 # for -minMaf 0.05, all good bams (incl those without traits)
 export FILTERS="-uniqueOnly 1 -remove_bads 1 -skipTriallelic 1 -minMapQ 20 -minQ 20 -dosnpstat 1 -doHWE 1 -maxHetFreq 0.5 -sb_pval 1e-5 -hetbias_pval 1e-5 -minInd 152 -snp_pval 1e-5 -minMaf 0.05 "
-export TODO8="-doMajorMinor 1 -doMaf 1 -doCounts 1 -makeMatrix 1 -doIBS 1 -doCov 1 -doGeno 8 -doPost 1"
+export TODO8="-doMajorMinor 1 -doMaf 1 -doCounts 1 -makeMatrix 1 -doIBS 1 -doCov 1 -doGeno 8 -doPost 1 -doGlf 2"
 echo '#!/bin/bash
 #SBATCH -J zz8
 #SBATCH -n 1
@@ -131,14 +131,13 @@ sbatch ldl.slurm
 # running 50 hold-out replicates on all chromosomes for proportion of D
 >pdd
 for R in `seq 1 50`; do
-REP=rep${R}_10;
-MDS=mds2_${R}_10;
-for CHR in `ls chr*postAlleles.gz`; do
+REP=rep${R}_25;
+for CHR in `ls *postAlleles.gz`; do
 OUTN=`echo $CHR | perl -pe 's/.+(chr\d+).+/$1/'`;
-echo "Rscript RDA_GWAS.R gt=$CHR covars=$MDS traits=pd.traits gdist.samples=bams.qc plots=FALSE gdist=zz8.ibsMat hold.out=$REP outfile=${OUTN}_pd_${REP}.RData">>pdd;
+echo "Rscript ~/bin/RDA_GWAS.R gt=$CHR covars.e=reefsites covars.g=technical.covars traits=pd.traits gdist.samples=bams.qc plots=FALSE gdist=zz8.ibsMat hold.out=$REP">>pdd;
 done;
 done
-ls5_launcher_creator.py -j pdd -n pdd -a tagmap -e matz@utexas.edu -t 0:10:00 -w 6 -q normal
+ls5_launcher_creator.py -j pdd -n pdd -a tagmap -e matz@utexas.edu -t 0:10:00 -w 24 -q normal
 sbatch pdd.slurm
 
 # running 50 hold-out replicates on all chromosomes for bleaching traits
