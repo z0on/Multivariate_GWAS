@@ -8,7 +8,7 @@
 - several correlated traits can be used together as a "compound trait".
 
 The key script here is **`RDA_GWAS.R`**, which is designed for command-line usage (`Rscript RDA_GWAS.R [arguments]`). 
-The genotype file needed to run exmple code below, `chr14.postAlleles.gz`, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . 
+The genotype file to run example code, `chr14.postAlleles.gz`, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . 
 
 ### *RDA_GWAS.R*: Main arguments (things we need to run this method)
 > **Note:** all tables must be space-delimited, and can be compressed .gz files.
