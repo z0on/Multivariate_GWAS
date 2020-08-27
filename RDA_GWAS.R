@@ -47,7 +47,7 @@ nsites=5500000       number of sites to compute FDR (for Manhattan plot)
 prune.dist=50000     pruning distance (selected SNPs must be at least that far apart). Alternatively, a RData bundle containing
                      object rdlm, output of LDq.R script - distance to R2 dropoff below 0.1.
 
-Output:              An RData bundle containing results table for pruned SNPs (out) with zscores, pvalues, 
+Output:              An RData bundle containing results table for pruned SNPs (gwas) with zscores, pvalues, 
                      betas and R2, their genotypes (gt.s), genotypes of hold-out samples (if any) at the selected
                      SNPs (gt.test), manhattan plot data for all sites (manh), and sample scores 
                      in the ordination (sample.scores).
@@ -102,20 +102,19 @@ options(datatable.fread.datatable=FALSE)
 
 #---- reading and aligning data
 
-   setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS")
-          gtfile = "chr1.postAlleles.gz"
-          covs.g = "technical.covars"
-          covs.e = "reefsites"
-          traits = "pd.traits"
-          bams = "bams.qc"
-          ibs="zz8.ibsMat"
-          outfile="c1_.RData"
-          plots=T
-          nsites=5500000
-      #    prune.dist='~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/chr8.maf01.geno.gz.LD.ldlm01.RData'
-         prune.dist=25000
-  #        hold.out="rep14_25"
-          hold.out=0
+   # setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS")
+          # gtfile = "chr8.postAlleles.gz"
+          # covs.g = "technical.covars"
+          # covs.e = "reefsites"
+          # traits = "pd.traits"
+          # bams = "bams.qc"
+          # ibs="zz8.ibsMat"
+          # plots=T
+          # nsites=5500000
+  # #        prune.dist='~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/chr8.maf01.geno.gz.LD.ldlm01.RData'
+          # prune.dist=25000
+   # #       hold.out="rep14_25"
+         # hold.out=0
 
 outfile=paste(sub("\\..+","",gtfile),sub("\\..+","",traits),sub("\\..+","",hold.out),sep=".")
 
@@ -234,10 +233,19 @@ traits=data.frame(traits[goods.use,])
 rownames(traits)=goods.use
 colnames(traits)=trcols
 
-if (hold.out>0) { gt.test=gt[,goods.test] } else { gt.test=0 }
+message(nrow(traits)," samples used, ",sum(goods.test!=0)," held out")
+
+if (hold.out>0) { 
+	gt.test=gt[,goods.test] 
+} else { 
+	gt.test=0 
+	goods.test=goods.use
+}
 gt=gt[,goods.use]
 
-message(nrow(traits)," samples used, ",sum(goods.test!=0)," held out")
+# af=apply(gt,1,sum)
+# af=af/(2*ncol(gt))
+# hist(af,breaks=40)
 
 #------- computing RDA and SNP scores against CAP1
 
@@ -313,15 +321,6 @@ message("calculating pvalues...")
 pvals=getEmpP(snp.scores,nulls)
 names(pvals)=row.names(gt)
 
-#----- computing betas and r2s
-
-message("\ncalculating betas...")
-beta=function(x,y) { return(coef(lm(y~x))[2]) }
-b=apply(t(gt),2,beta,y=sample.scores)
-message("\ncalculating R2s...")
-r2=apply(t(gt),2,cor,y=sample.scores)
-r2=r2^2
-
 #--------- assembling results table
 
 logp=-log(pvals,10)
@@ -336,8 +335,6 @@ gwas$logp=as.numeric(gwas$logp)
 gwas$logp.adj=as.numeric(gwas$logp.adj)
 gwas$pos=as.numeric(gwas$pos)
 gwas$chrom=as.factor(gwas$chrom)
-gwas$beta=b
-gwas$r2=r2
 
 #---- manhattan
 
@@ -375,8 +372,8 @@ chs=row.names(tops)
 chroms=as.factor(sub(":.+","",chs))
 poss=as.numeric(sub(".+:","",chs))
 
-ps=c();chrs=c();chr=levels(chroms)[1]
 for (chr in levels(chroms)) {
+	ps=c()
 	message("\n     chromosome ",chr)
 	tsc=tops.scores[chroms==chr]
 	tops.c=tops[chroms==chr,]
@@ -421,21 +418,40 @@ message("      ",length(sorted)," blips")
 #		message(" ", length(sorted)," remaining")
 		setTxtProgressBar(pb,n0-length(sorted))
 	}
-	ps=append(ps,p[order(p)])
-	chrs=append(chrs,rep(chr,length(p)))
-	gwas$ldpruned[gwas$chrom==chr & gwas$pos %in% ps]=1
+	ps=p[order(p)]
+#	chrs=append(chrs,rep(chr,length(p)))
+	gwas$ldpruned[gwas$chrom==chr & gwas$pos %in% p]=1
 }
 
 chosen=which(gwas$ldpruned==1)
 message(length(chosen)," blips left after pruning")
-if(hold.out==0) { gt.test=gt; traits.test=traits }
 
 # replotting pruned manhattan plot
 if (plots) { 
 	plot(manhat(gwas[chosen,]))
 }
 
+#----- computing betas and r2s
+
+message("\ncalculating betas...")
+beta=function(x,y) { return(coef(lm(y~x))[2]) }
+b=apply(t(gt[chosen,]),2,beta,y=sample.scores)
+message("\ncalculating R2s...")
+r2=apply(t(gt[chosen,]),2,cor,y=sample.scores)
+r2=r2^2
+gwas$beta=0
+gwas$r2=0
+gwas$beta[chosen]=b
+gwas$r2[chosen]=r2
+
 #------- regularized regression
+
+if (hold.out==0) { 
+	gt.test=gt
+	traits.test=traits
+}
+
+save(traits.test,traits,sample.scores,goods.use,goods.test,file=paste("traits_etc_",hold.out,".RData",sep=""))
 
 gwas$beta.rr=0
 message("glmnet: screening alphas...",appendLF=FALSE)
@@ -469,10 +485,6 @@ save(gwas,file=paste(outfile,"_gwas.RData",sep=""))
 #---------------- predictng test set (if not specified, predict same set)
 
 if(plots){
-	if (hold.out==0) { 
-		gt.test=gt
-		traits.test=traits
-		}
 
 	goodst=row.names(traits.test)[which(!is.na(traits.test[,1]))]
 	if(is.character(traits.test[goodst[1],1])) { 
@@ -486,27 +498,29 @@ if(plots){
 	# head(out)
 	# plot(beta.rr~beta,out)
 	message("scanning for best number of SNPs...")
-	ns=unique(round(10^(seq(0.1,log(length(snps),10),length.out=20))))
+	ns=unique(round(10^(seq(0.1,log(length(snps),10),length.out=30))))
 	pb=txtProgressBar(0,length(ns))
-	zr=vector("list", length = length(ns))
+	zr=vector("list", length = length(ns));cp=0;maxcp=0
 	for (j in 1:length(ns)) {
 		s=ns[j]
 		chosen2=snps[1:s]
-		for (i in 1:ncol(gt.test)) {
-#			pred.rr[i]=sum(gwas[chosen2,"beta.rr"]*gt.test[chosen2,i])
-			pred.lm[i]=sum(gwas[chosen2,"beta"]*gt.test[chosen2,i])
+		betas=gwas[chosen2,"beta"];
+		gtt=gt.test[chosen2,]
+		for (i in 1:ncol(gtt)) {
+			pred.lm[i]=sum(betas*gtt[,i])
 		}	
 		preds=data.frame(cbind(lm=pred.lm,true=tt))
 		row.names(preds)=goodst
 		zr[[s]]=preds
 		setTxtProgressBar(pb,j)
 	}
+
 	zr2=c();Ns=c()
 	for (s in ns) {
-		Ns=append(Ns,s)
-		allpreds=zr[[s]]
-		zr2=append(zr2,cor(allpreds$lm,allpreds$true))
-	}
+		 Ns=append(Ns,s)
+		 allpreds=zr[[s]]
+		 zr2=append(zr2,cor(allpreds$lm,allpreds$true))
+	 }
 	plot(zr2~Ns,xlab="N(SNPs)",ylab="prediction R",log="x")
 	lines(zr2~Ns)
 
