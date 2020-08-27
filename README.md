@@ -78,51 +78,25 @@ Also, unless `plots=FALSE` option was given, there will be `_plots.pdf` files ge
 * Predicted vs observed trait, using prediction from regularized regression model.  
 >**NOTE:** In this run, the last three plots are more like a sanity check rather than actual test of prediction power, because the trait is predicted **in the same samples** that were used to derive predictions. This always works too well! To check our prediction power properly, we must predict the trait in "hold-out" samples, that were NOT used for deriving predictions (see next section).
 
-To combine all chromosomes together and plot genome-wide manhattan plot (the plot only uses contigs with "chr" in the name!):
+## To combine chromosomes together ##
+Technically it is not necessary to run `RDA_GWAS.R` on indivdual chromosomes. It can properly handle mutiple chromosomes, but it will likely be very slow and run out of memory if given more than 2-3 chromosomes at once. Besides, splitting the task into individual chromosomes allows to run the analysis in parallel.
+
+To combine all chromosomes together, there is a script `compile_chromosomes.R`. It will concatenate GWAS results for individual chromosome, rerun the elastic net regression and best-snp-number selection for lm-based preditions, and make predictions for the hold-out sample set (common to all per-chromosome analyses). If not hold-out set was specified, the predictions will be made about the whole dataset itself (just the sanity check, not to be reported). 
+
+As input, `compile_chromosomes.R` needs two file-lists (text files listing file names): one for results of `RDA_GWAS.R` with extendion `_gwas.RData`, and another for per-chromosome genotype files, same as used for `RDA_GWAS.R` (e.g., `chr1.postAlleles.gz`). It also needs a file called `traits_etc*.RData`, saved by `RDA_GWAS.R`, which contains information about traits and hold-out samples (argument `traits`), and the list of sample names (argument `gt.samples`) corresponding to the order of samples in genotype files (same as used in `RDA_GWAS.R`).
+
+The example below first writes down the two file-lists and then runs `compile_chromosomes.R`.
 ```bash
-ls *_pd.RData >pds
-Rscript compile_chromosomes.R in=pds
+ls chr*_gwas.RData >gws
+ls chr*postAlleles.gz >gts
+Rscript compile_chromosomes.R in=grs gt=gts gt.samples=bams.qc traits=traits_etc_0.RData
 ```
-## Run with hold-out samples ##
-The idea is to withold some samples from the analysis and use them later to test whether we can predict the trait in them from their genotypes. This is a bit more involved. First, we need to list hold-out sample names in a file. We might wish to make many such files listing randomly picked hold-out samples. So we will have a bunch of sample-listing files named, for example, `rep10_25` - which would be 10th replicate of witholding 25 samples. We might also need to make replicate-specific tables of covariates, especially if they include unconstrained MDSes - those we are supposed to compute based on the dataset *without the hold-out samples*. See 'write_holdout_reps.R' for example R code (*spaghetti warning...*). 
+Additional options to `compile_chromosomes.R` are `runGLMnet=F` to suppress rerunning the elastic net regression and simply reuse per-chromosome betas, and `forceAlpha`, which must be the number between 0 and 1 and fixes the alpha parameter of the elastic net (by default the optimal alpha is determined based on hold-out sample set).
 
-Then we basically need to run the above code for each of the replicates, with additional `hold.out=[filename]` argument to `RDA_GWAS.R` . Here is one way to do this with bash looping. Note that in this case we are setting up a run with 50 hold-out replicates, with replicate-specific covariate files named like `mds2_10_25` (to correspond with the hold-out samples filenames like `rep10_25`). Note that we do NOT need to subset our genotypes, genetic distances, or traits tables - this will happen automatically, just supply full files for all samples. Also there is no need to have replicate-specific covariates if the covariates are not computed from the dataset itself (for example, sequencing batch, population designations of each sample, sequencing quality metrics).
+`compile_chromosomes.R` saves the combined gwas data taable in `*_gwas.RData`. It also saves the table of two kinds of predictions: lm (linear model), rr (elastic net regression), and true trait values (after regressing environmental covariates within `RDA_GWAS.R`) in `*_predictions.RData`.
 
-```bash
->pdd
-for R in `seq 1 50`; do
-REP=rep${R}_10;
-MDS=mds2_${R}_10;
-for CHR in `ls *postAlleles.gz`; do
-OUTN=`echo $CHR | perl -pe 's/.+(chr\d+).+/$1/'`;
-echo "Rscript RDA_GWAS.R gt=$CHR covars=$MDS traits=pd.traits gdist.samples=bams.qc plots=FALSE gdist=zz8.ibsMat hold.out=$REP outfile=${OUTN}_pd_${REP}.RData">>pdd;
-done;
-done
-```
-Executing all commands in `pdd` (much preferrably in parallel!) will give us 50 hold-out runs per each chromosome. To sort out this mess, first we need to compile results for all chromosomes for each hold-out replicate, using `compile_chromosomes.R`:
-```bash
->compd
-for r in `seq 1 50`; do
-ls *pd_rep${r}_*.RData >rep${r}_pd; 
-echo "Rscript compile_chromosomes.R in=rep${r}_pd plotManhattan=FALSE">>compd;
-done
-```
-Executing all commands in `compd` gives us per-replicate, whole-genome results. Each output file includes genotypes for hold-out samples, not included in the main analysis. The last stage is to see how well the trait values in these samples are predicted based on their polygenic scores, and summarize the results of all replicates in a nice plot: 
-```bash
-ls rep*_pd.RData >reps50
-compile_replicates.R reps=reps50 traits=pd.traits
-```
-Note that we need to supply argument `traits` again, pointing to the same table as we were using for `RDA_GWAS.R`
-
-This will generate a plot `reps50.pdf` looking somewhat like this:
-
-![predictions](pd_predictions.png)
-
-Where:
-* panel 1: scan through z-score cutoffs for best predictions (using lm betas). Basically it shows whether preriction improves if we keep including more and more SNPs with worse z-scores. 
-* panel 2: predictions for hold-out samples based on lm betas, for the z-score cutoff giving maximal prediction accuracy (listed above the panel). Colors are different replicates, just for sanity check: all the well-predicted samples must not belong to a single replicate. 
-* panel 3: same as panel 2, but based on regularized betas (from elastic net regression)
-* panel 4: comparison of simple and regularized predictions
+## Multiple hold-out replicates ##
+To properly estimate prediction accurcy, we would want to run multiple analyses like the one described above with randomly picked hold-out samples. This sounds a bit tedious but not actually difficult with a bit of bash scripting. One simply need to repeat the above analysis 100 times for different hold-out sample sets, and then put together all the generated `*_predictions.RData`tables.
 
 ## Where does it come from?
 This project is based on the idea of using constrained ordination to look for genotype-environment associations, presented in papers by Brenna R. Forester et al: 
