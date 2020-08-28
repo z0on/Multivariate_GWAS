@@ -7,8 +7,11 @@
 - naturally generates empirical null distribution to detect true signal and calculate p-values;
 - several correlated traits can be used together as a "compound trait".
 
-The key script here is **`RDA_GWAS.R`**, which is designed for command-line usage (`Rscript RDA_GWAS.R [arguments]`). 
+The key script here is **`RDA_GWAS.R`**, which is designed for command-line usage . 
 The genotype file to run example code, `chr14.postAlleles.gz`, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . 
+
+### Installation ###
+Simply clone the github repository and use R scripts as command-line programs (e.g., `Rscript RDA_GWAS.R [arguments]`), see details below. When running examples below, make sure to change path to scripts to match yours.
 
 ### *RDA_GWAS.R*: Main arguments (things we need to run this method)
 > **Note:** all tables must be space-delimited, and can be compressed .gz files.
@@ -101,7 +104,7 @@ Assuming we have already created 50 files named like rep1_25, rep2_25 etc, each 
 >pdd
 for R in `seq 1 50`; do
 REP=rep${R}_25;
-for CHR in `ls *postAlleles.gz`; do
+for CHR in `ls chr*postAlleles.gz`; do
 echo "Rscript ~/bin/RDA_GWAS.R gt=$CHR covars.e=reefsites covars.g=technical.covars traits=pd.traits gdist.samples=bams.qc plots=FALSE gdist=zz8.ibsMat hold.out=$REP">>pdd;
 done;
 done
