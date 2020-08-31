@@ -174,7 +174,7 @@ require(glmnet)
 require(data.table)
 require(R.utils)
 require(scales)
-source("RDA_GWAS_functions.R")
+# source("RDA_GWAS_functions.R")
 options(datatable.fread.datatable=FALSE)
 
 

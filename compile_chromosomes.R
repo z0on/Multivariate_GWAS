@@ -151,7 +151,7 @@ require(data.table)
 require(scales)
 options(datatable.fread.datatable=FALSE)
 
-source("RDA_GWAS_functions.R")
+# source("RDA_GWAS_functions.R")
 
 #----------- debug params
 
