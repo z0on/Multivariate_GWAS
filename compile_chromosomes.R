@@ -92,7 +92,7 @@ in=[filename]        List of per-chromosome RDA_GWAS.R '_gwas.RData' outputs
 traits=[filename]    RData bundle 'traits_etc_*.RData' containing stuff for the hold-out replicate 
                      This is the second file saved by RDA_GWAS.R (same for all chromosomes)
                      
-gt=[filename]        list of genotype filenames, corresponding to chromosomes (same as used by RDA_GWAS.R).
+gts=[filename]        list of genotype filenames, corresponding to chromosomes (same as used by RDA_GWAS.R).
 					 If left unspecified, elastic net regression (GLMnet) will NOT be rerun.                     
 
 gt.samples=[filename]   single-column list of sample names corresponding to the genotype files.
@@ -125,17 +125,17 @@ bams =sub("gt.samples=","", commandArgs()[bams])
 if(length(grep("plots=F",commandArgs()))>0) { plots=FALSE } else { plots=TRUE }
 
 runGLMnet=TRUE
-traits =grep("traits=",commandArgs())
-if (length(traits)==0) { 
-	stop("specify traits etc. file\nRun script without arguments to see all options\n") 
-	}
-traits =sub("traits=","", commandArgs()[traits]) 
+traitfile=grep("traits=",commandArgs())
+if (length(traitfile)==0) {
+        stop("specify traits etc. file\nRun script without arguments to see all options\n")
+        }
+traitfile=sub("traits=","", commandArgs()[traitfile])
 
 gts=grep("gts=",commandArgs())
 if (length(gts)==0) { 
 	print("no list of files containing per-chromosome posterior allele counts supplied\n elastic net will NOT be rerun \nRun script without arguments to see all options\n") 
 	runGLMnet=FALSE
-	} else { gts =sub("in=","", commandArgs()[gts]) }
+	} else { gts =sub("gts=","", commandArgs()[gts]) }
 
 if(length(grep("runGLMnet=F",commandArgs()))>0) { runGLMnet=FALSE } 
 
@@ -157,14 +157,14 @@ options(datatable.fread.datatable=FALSE)
 
 #----------- debug params
 
-# setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/")
-  # infile = "gwass0"
-  # gts="gts"
-  # traits="traits_etc_0.RData"
-  # forceAlpha=-1
-  # runGLMnet=TRUE
-  # plots=TRUE
-  # bams = "bams.qc"
+ # setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/")
+   # infile = "gwass0"
+   # gts="gts"
+   # traits="traits_etc_0.RData"
+   # forceAlpha=-1
+   # runGLMnet=TRUE
+   # plots=TRUE
+   # bams = "bams.qc"
 
 # ----- reading all chromosome data
 
@@ -177,7 +177,7 @@ bams=sub("\\..+","",bams)
 
 if(runGLMnet) {
  gtss=scan(gts,what="character")
- ll=load(traits)
+ ll=load(traitfile)
 }
 
 gts.test=list()
