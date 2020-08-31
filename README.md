@@ -122,7 +122,9 @@ ls chr*${REP}_gwas.RData >gws_${REP};
 echo "Rscript ~/Multivariate_GWAS/compile_chromosomes.R in=gws_${REP} gts=gts gt.samples=bams.qc traits=traits_etc_${REP}.RData">>compchrom;
 done
 ```
-Finally, we need to fire up `R`, concatenate all dataframes from `*_predictions.RData` files, and plot the predictions against truth:
+Finally, we need to fire up `R`, concatenate all dataframes from `*_predictions.RData` files, and plot the predictions against truth (example script is `combine_prediction_reps.R`, which is not a command-line kind of script):
+
+![allpreds](allpreds.png)  
 
 ## Where does it come from?
 This project is based on the idea of using constrained ordination to look for genotype-environment associations, presented in papers by Brenna R. Forester et al: 
