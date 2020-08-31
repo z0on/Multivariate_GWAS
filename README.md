@@ -2,9 +2,9 @@
 ## based on constrained ordination
 
 ### Advantages:
-- leverages natural SNP covariance structure to detect polygenic signals;
-- any number of nuisance covariates can be removed without loss of power;
-- naturally generates empirical null distribution to detect true signal and calculate p-values;
+- leverages natural SNP covariance structure to detect polygenic signals,
+- naturally generates empirical null distribution to detect true signal and calculate p-values,
+- any number of nuisance covariates can be removed without loss of power,
 - several correlated traits can be used together as a "compound trait".
 
 The key script here is **`RDA_GWAS.R`**, which is designed for command-line usage . 
