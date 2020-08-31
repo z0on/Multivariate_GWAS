@@ -122,6 +122,8 @@ bams =grep("gt.samples=",commandArgs())
 if (length(bams)==0) { stop ("specify file listing sample names (gt.samples=filename)\nRun script without arguments to see all options\n") }
 bams =sub("gt.samples=","", commandArgs()[bams])
 
+if(length(grep("plots=F",commandArgs()))>0) { plots=FALSE } else { plots=TRUE }
+
 runGLMnet=TRUE
 traits =grep("traits=",commandArgs())
 if (length(traits)==0) { 

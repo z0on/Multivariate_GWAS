@@ -158,7 +158,7 @@ bams =grep("gdist.samples=",commandArgs())
 if (length(bams)==0) { stop ("specify file listing samples for genetic distances (gdist.samples=filename)\nRun script without arguments to see all options\n") }
 bams =sub("gdist.samples=","", commandArgs()[bams])
 
-if(length(grep("plots=FALSE",commandArgs()))>0) { plots=FALSE } else { plots=TRUE }
+if(length(grep("plots=F",commandArgs()))>0) { plots=FALSE } else { plots=TRUE }
 nsites =grep("nsites=",commandArgs())
 if(length(nsites)>0) { nsites=as.numeric(sub("nsites=","", commandArgs()[nsites])) } else { nsites=5500000 }
 prune.dist =grep("prune.dist=",commandArgs())
