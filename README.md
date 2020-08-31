@@ -89,7 +89,7 @@ The example below first writes down the two file-lists and then runs `compile_ch
 ```bash
 ls chr*_gwas.RData >gws
 ls chr*postAlleles.gz >gts
-Rscript ~/Multivariate_GWAS/compile_chromosomes.R in=grs gt=gts gt.samples=bams.qc traits=traits_etc_0.RData
+Rscript ~/Multivariate_GWAS/compile_chromosomes.R in=grs gts=gts gt.samples=bams.qc traits=traits_etc_0.RData
 ```
 Additional options to `compile_chromosomes.R` are `runGLMnet=F` to suppress rerunning the elastic net regression and simply reuse per-chromosome betas, and `forceAlpha`, which must be the number between 0 and 1 and fixes the alpha parameter of the elastic net (by default the optimal alpha is determined based on hold-out sample set).
 
@@ -119,7 +119,7 @@ ls chr*postAlleles.gz >gts
 for R in `seq 1 50`; do
 REP=rep${R}_25;
 ls chr*${REP}_gwas.RData >gws_${REP};
-echo "Rscript ~/Multivariate_GWAS/compile_chromosomes.R in=gws_${REP} gt=gts gt.samples=bams.qc traits=traits_etc_${REP}.RData">>compchrom;
+echo "Rscript ~/Multivariate_GWAS/compile_chromosomes.R in=gws_${REP} gts=gts gt.samples=bams.qc traits=traits_etc_${REP}.RData">>compchrom;
 done
 ```
 Finally, we need to fire up `R`, concatenate all dataframes from `*_predictions.RData` files, and plot the predictions against truth:
