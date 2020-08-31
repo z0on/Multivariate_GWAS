@@ -2,16 +2,16 @@
 ## based on constrained ordination
 
 ### Advantages:
-- leverages natural SNP covariance structure to detect polygenic signals;
-- any number of nuisance covariates can be removed without loss of power;
-- naturally generates empirical null distribution to detect true signal and calculate p-values;
+- leverages natural SNP covariance structure to detect polygenic signals,
+- naturally generates empirical null distribution to detect true signal and calculate p-values,
+- any number of nuisance covariates can be removed without loss of power,
 - several correlated traits can be used together as a "compound trait".
 
 The key script here is **`RDA_GWAS.R`**, which is designed for command-line usage . 
 The genotype file to run example code, `chr14.postAlleles.gz`, is here: https://www.dropbox.com/s/12oi4dmfep7meup/chr14.postAlleles.gz . 
 
 ### Installation ###
-Simply clone the github repository and use R scripts as command-line programs (e.g., `Rscript RDA_GWAS.R [arguments]`), see details below. When running examples below, make sure to change path to scripts to match yours.
+Simply clone the github repository and use R scripts as command-line programs (e.g., `Rscript RDA_GWAS.R [arguments]`), see details below. All bash code below assumes the repository was cloned into root directory; if not, make sure so change `~/Multivariate_GWAS/` to the actual path.
 
 ### *RDA_GWAS.R*: Main arguments (things we need to run this method)
 > **Note:** all tables must be space-delimited, and can be compressed .gz files.
@@ -43,7 +43,7 @@ Assuming we have multiple `*.postAlleles.gz` files with genotypes, one file per 
 ```bash
 >allchroms
 for CHR in `ls *postAlleles.gz`; do
-echo "Rscript ~/bin/RDA_GWAS.R gt=$CHR covars.e=reefsites covars.g=technical.covars traits=pd.traits gdist.samples=bams.qc gdist=zz8.ibsMat">>allchroms;
+echo "Rscript ~/Multivariate_GWAS/RDA_GWAS.R gt=$CHR covars.e=reefsites covars.g=technical.covars traits=pd.traits gdist.samples=bams.qc gdist=zz8.ibsMat">>allchroms;
 done
 ```
 Execute all commands in `allchroms` (preferably in parallel)
@@ -89,7 +89,7 @@ The example below first writes down the two file-lists and then runs `compile_ch
 ```bash
 ls chr*_gwas.RData >gws
 ls chr*postAlleles.gz >gts
-Rscript ~/bin/compile_chromosomes.R in=grs gt=gts gt.samples=bams.qc traits=traits_etc_0.RData
+Rscript ~/Multivariate_GWAS/compile_chromosomes.R in=grs gt=gts gt.samples=bams.qc traits=traits_etc_0.RData
 ```
 Additional options to `compile_chromosomes.R` are `runGLMnet=F` to suppress rerunning the elastic net regression and simply reuse per-chromosome betas, and `forceAlpha`, which must be the number between 0 and 1 and fixes the alpha parameter of the elastic net (by default the optimal alpha is determined based on hold-out sample set).
 
@@ -105,7 +105,7 @@ Assuming we have already created 50 files named like rep1_25, rep2_25 etc, each 
 for R in `seq 1 50`; do
 REP=rep${R}_25;
 for CHR in `ls chr*postAlleles.gz`; do
-echo "Rscript ~/bin/RDA_GWAS.R gt=$CHR covars.e=reefsites covars.g=technical.covars traits=pd.traits gdist.samples=bams.qc plots=FALSE gdist=zz8.ibsMat hold.out=$REP">>pdd;
+echo "Rscript ~/Multivariate_GWAS/RDA_GWAS.R gt=$CHR covars.e=reefsites covars.g=technical.covars traits=pd.traits gdist.samples=bams.qc plots=FALSE gdist=zz8.ibsMat hold.out=$REP">>pdd;
 done;
 done
 ```
@@ -119,7 +119,7 @@ ls chr*postAlleles.gz >gts
 for R in `seq 1 50`; do
 REP=rep${R}_25;
 ls chr*${REP}_gwas.RData >gws_${REP};
-echo "Rscript ~/bin/compile_chromosomes.R in=gws_${REP} gt=gts gt.samples=bams.qc traits=traits_etc_${REP}.RData">>compchrom;
+echo "Rscript ~/Multivariate_GWAS/compile_chromosomes.R in=gws_${REP} gt=gts gt.samples=bams.qc traits=traits_etc_${REP}.RData">>compchrom;
 done
 ```
 Finally, we need to fire up `R`, concatenate all dataframes from `*_predictions.RData` files, and plot the predictions against truth:
