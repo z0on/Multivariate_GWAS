@@ -92,13 +92,11 @@ in=[filename]        List of per-chromosome RDA_GWAS.R '_gwas.RData' outputs
 traits=[filename]    RData bundle 'traits_etc_*.RData' containing stuff for the hold-out replicate 
                      This is the second file saved by RDA_GWAS.R (same for all chromosomes)
                      
-gts=[filename]        list of genotype filenames, corresponding to chromosomes (same as used by RDA_GWAS.R).
-					 If left unspecified, elastic net regression (GLMnet) will NOT be rerun.                     
+gts=[filename]        list of genotype filenames, corresponding to chromosomes (same as used by RDA_GWAS.R)                  
 
 gt.samples=[filename]   single-column list of sample names corresponding to the genotype files.
                            (same as for RDA_GWAS run)
-
-
+                           
 runGLMnet=TRUE       Whether to re-run elastic net regression on compiled data. If not, betas from 
                      per-chromosome elastic net regressions will be used.
 
@@ -118,33 +116,32 @@ infile=grep("in=",commandArgs())
 if (length(infile)==0) { stop ("specify list of replicates (in=filename)\nRun script without arguments to see all options\n") }
 infile=sub("in=","", commandArgs()[infile])
 
+if(length(grep("plots=F",commandArgs()))>0) { plots=FALSE } else { plots=TRUE }
+
+traitfile=grep("traits=",commandArgs())
+if (length(traitfile)==0) { 
+	stop("specify traits etc. file\nRun script without arguments to see all options\n") 
+	}
+traitfile=sub("traits=","", commandArgs()[traitfile]) 
+
+runGLMnet=TRUE
+if(length(grep("runGLMnet=F",commandArgs()))>0) { runGLMnet=FALSE } 
+
+gts=grep("gts=",commandArgs())
+if (length(gts)==0) { 
+	stop("no list of files containing per-chromosome posterior allele counts supplied\nRun script without arguments to see all options\n") 
+	runGLMnet=FALSE
+	} else { gts =sub("gts=","", commandArgs()[gts]) }
+
 bams =grep("gt.samples=",commandArgs())
 if (length(bams)==0) { stop ("specify file listing sample names (gt.samples=filename)\nRun script without arguments to see all options\n") }
 bams =sub("gt.samples=","", commandArgs()[bams])
 
-if(length(grep("plots=F",commandArgs()))>0) { plots=FALSE } else { plots=TRUE }
-
-runGLMnet=TRUE
-traitfile=grep("traits=",commandArgs())
-if (length(traitfile)==0) {
-        stop("specify traits etc. file\nRun script without arguments to see all options\n")
-        }
-traitfile=sub("traits=","", commandArgs()[traitfile])
-
-gts=grep("gts=",commandArgs())
-if (length(gts)==0) { 
-	print("no list of files containing per-chromosome posterior allele counts supplied\n elastic net will NOT be rerun \nRun script without arguments to see all options\n") 
-	runGLMnet=FALSE
-	} else { gts =sub("gts=","", commandArgs()[gts]) }
-
-if(length(grep("runGLMnet=F",commandArgs()))>0) { runGLMnet=FALSE } 
-
-plotManhattan=TRUE
-if(length(grep("plotManhattan=F",commandArgs()))>0) { plotManhattan=FALSE } 
-
-forceAlpha=-1
-fa=grep("forceAlpha=",commandArgs())
-if(length(fa)>0) { forceAlpha=as.numeric(sub("forceAlpha=","", commandArgs()[fa])) } 
+if(runGLMnet){
+  forceAlpha=-1
+  fa=grep("forceAlpha=",commandArgs())
+  if(length(fa)>0) { forceAlpha=as.numeric(sub("forceAlpha=","", commandArgs()[fa])) } 
+}
 
 require(dplyr)
 require(glmnet)
@@ -157,33 +154,34 @@ options(datatable.fread.datatable=FALSE)
 
 #----------- debug params
 
- # setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/")
-   # infile = "gwass0"
-   # gts="gts"
-   # traits="traits_etc_0.RData"
-   # forceAlpha=-1
-   # runGLMnet=TRUE
-   # plots=TRUE
-   # bams = "bams.qc"
+# setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/")
+  # infile = "gwass0"
+  # gts="gts"
+  # traits="traits_etc_0.RData"
+  # forceAlpha=-1
+  # runGLMnet=TRUE
+  # plots=TRUE
+  # bams = "bams.qc"
 
 # ----- reading all chromosome data
 
 infiles =scan(infile,what="character")
-bams=scan(bams,what="character")
-#removing path
-bams=sub(".+/","",bams)
-#removing extension
-bams=sub("\\..+","",bams)
 
 if(runGLMnet) {
- gtss=scan(gts,what="character")
- ll=load(traitfile)
+  bams=scan(bams,what="character")
+  #removing path 
+  bams=sub(".+/","",bams)
+  #removing extension
+  bams=sub("\\..+","",bams)
+
+  gtss=scan(gts,what="character")
+  gts.test=list()
+  gts.use=list()
 }
 
-gts.test=list()
-gts.use=list()
+ll=load(traitfile)
 gwas.c=list()
-message("reading genotypes...")
+message("reading data...")
 for (f in 1:length(infiles)) {
 	ll=load(infiles[f])
 	gwas.c[[f]]=gwas
@@ -198,8 +196,11 @@ for (f in 1:length(infiles)) {
 		gts.use[[f]]=gt[,goods.use]
 	}
 }
-gt.test=do.call(rbind,gts.test)
-gt=do.call(rbind,gts.use)
+if(runGLMnet) {
+ gt.test=do.call(rbind,gts.test)
+ gt=do.call(rbind,gts.use)
+}
+
 gwas=do.call(rbind,gwas.c)
 
 # recalcuating logp.adjusted
