@@ -20,7 +20,7 @@ Simply clone the github repository and use R scripts as command-line programs (e
 
 `covars.e=[filename]`  Table of NON-GENETIC covariates (e.g. sampling time, age of individual). These will be regressed out of traits. Rows - samples, columns - covariates. First column must be sample names. Header line must be present (sample, names of covariates). May not fully match the genotype table - the script will match them using the `sample` column. Rows containing NA will be removed.
 
-`covars.g=[filename]`  Table of NON-GENETIC covariates (e.g. sequencing batch, read depth, first couple of genetic PCs). These will be regressed out of genotypes. Same format as `covars.e`.
+`covars.g=[filename]`  Table of GENETIC covariates (e.g. sequencing batch, read depth, first couple of genetic PCs). These will be regressed out of genotypes. Same format as `covars.e`.
 
 `traits=[filename]` Table of trait(s). First column must be sample names. There must be at least 2 columns (samples, 1 trait). Header line must be present (sample, names of traits). Just like `covars`, this table may not fully match the genotype table; rows containing NAs will be removed.
 
