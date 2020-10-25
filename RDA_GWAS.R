@@ -248,8 +248,8 @@ colnames(gt)=bams
 
 goods=intersect(intersect(goods.covars,goods.traits),colnames(gt))
 
-if(covs.g!=0) { covars.g=data.frame(covars.g[goods,]) }
-if(covs.e!=0) { covars.e=data.frame(covars.e[goods,]) }
+if(covs.g!=0) { covars.g=data.frame(covars.g[goods,]); row.names(covars.g)=goods }
+if(covs.e!=0) { covars.e=data.frame(covars.e[goods,]); row.names(covars.e)=goods }
 
 gt=gt[,goods]
 traits=data.frame(traits[goods,])
