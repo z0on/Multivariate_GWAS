@@ -274,25 +274,6 @@ if(covs.g!=0) {
 row.names(covs)=row.names(covars.g)
 covcols=colnames(covs)
 
-# --- Regressing environmental covariates out of traits
-
-trcols=colnames(traits)
-trrows=row.names(traits)
-if(covs.e!=0) { 
-   	cov.formula="~";pl=""
-	for (ci in 1:ncol(covars.e)) {
-	   if(is.integer(covars.e[,ci]) | is.character(covars.e[,ci])) { 
-			covars.e[,ci]=as.factor(covars.e[,ci])
-		}
-		cov.formula=paste(cov.formula,pl,"covars.e[,",ci,"]",sep="")
-		pl="+"
-	}
-	for (t in ncol(traits)) {
-		cov.formt=paste("traits[,",t,"]",cov.formula,sep="")
-		traits[,t]=residuals(lm(formula(cov.formt)))
-	}
-}
-
 # ---- splitting into train and test sets
 
 goods.test=0
@@ -320,6 +301,25 @@ if (hold.out>0) {
 	goods.test=goods.use
 }
 gt=gt[,goods.use]
+
+# --- Regressing environmental covariates out of traits
+
+trcols=colnames(traits)
+trrows=row.names(traits)
+if(covs.e!=0) { 
+   	cov.formula="~";pl=""
+	for (ci in 1:ncol(covars.e)) {
+	   if(is.integer(covars.e[,ci]) | is.character(covars.e[,ci])) { 
+			covars.e[,ci]=as.factor(covars.e[,ci])
+		}
+		cov.formula=paste(cov.formula,pl,"covars.e[goods.use,",ci,"]",sep="")
+		pl="+"
+	}
+	for (t in ncol(traits)) {
+		cov.formt=paste("traits[,",t,"]",cov.formula,sep="")
+		traits[,t]=residuals(lm(formula(cov.formt)))
+	}
+}
 
 # af=apply(gt,1,sum)
 # af=af/(2*ncol(gt))
