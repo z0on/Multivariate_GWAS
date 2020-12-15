@@ -180,19 +180,20 @@ options(datatable.fread.datatable=FALSE)
 
 #---- reading and aligning data
 
-   # setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS")
-          # gtfile = "chr8.postAlleles.gz"
-          # covs.g = "technical.covars"
-          # covs.e = "reefsites"
-          # traits = "pd.traits"
-          # bams = "bams.qc"
-          # ibs="zz8.ibsMat"
-          # plots=T
-          # nsites=5500000
+#    setwd("~/Dropbox/angsd_pileup/")
+#          gtfile = "chr1.postAlleles.gz"
+#          covs.g = "depth"
+         # covs.g=0
+#          covs.e = "reefsites"
+#          traits = "upd_propD.tab"
+#          bams = "goodbams"
+#          ibs="ibsa.ibsMat"
+#          plots=T
+#          nsites=5500000
   # #        prune.dist='~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/chr8.maf01.geno.gz.LD.ldlm01.RData'
-          # prune.dist=25000
-   # #       hold.out="rep14_25"
-         # hold.out=0
+#           prune.dist=25000
+#          hold.out="rep10_10"
+        # hold.out=0
 
 outfile=paste(sub("\\..+","",gtfile),sub("\\..+","",traits),sub("\\..+","",hold.out),sep=".")
 
@@ -213,6 +214,7 @@ traits$sample=NULL
 tnames=names(traits)
 goods.traits=row.names(na.omit(traits))
 traits=data.frame(scale(traits,scale=FALSE))
+trcols=colnames(traits)
 
 if(covs.e!=0) {
 	covars.e=fread(covs.e)
@@ -279,6 +281,10 @@ covcols=colnames(covs)
 goods.test=0
 if (hold.out!=0) {
 	goods.test=scan(hold.out,what="character")
+	#removing path
+	goods.test=sub(".+/","",goods.test)
+	#removing extension
+	goods.test=sub("\\..+","",goods.test)
 	goods.use=goods[!(goods %in% goods.test)]
 	traits.test=data.frame(traits[goods.test,])
 	row.names(traits.test)=goods.test
@@ -387,7 +393,7 @@ if(plots) {
 	pscores$z=factor(pscores$z)
 	ggplot()+
 		geom_point(data=pscores,aes(CAP1,MDS100,fill=z,color=z),shape = 21, colour = "grey20")+
-		geom_segment(data=biplot,aes(x=biplot$x1,y=biplot$y1,xend=biplot$CAP1,yend=biplot$CAP2,color="cyan3"),arrow = arrow(length = unit(0.3, "cm")))+
+		geom_segment(data=biplot,aes(x=x1,y=y1,xend=CAP1,yend=CAP2,color="cyan3"),arrow = arrow(length = unit(0.3, "cm")))+
 		theme_bw()+coord_equal()+theme(legend.position="n")
 }
 
@@ -620,7 +626,7 @@ if(plots){
 	}
 	allpreds=data.frame(cbind(rr,true=tt))
 	N=sum(gwas[chosen,"beta.rr"]!=0)
-	head(allpreds)
+#	head(allpreds)
 	allpreds$re.rr=rescale(allpreds$rr,range(allpreds$true))+rnorm(nrow(allpreds),0,jitter)
 	allpreds$re.true=allpreds$true+rnorm(nrow(allpreds),0,jitter)
 	

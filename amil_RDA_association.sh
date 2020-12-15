@@ -3,15 +3,131 @@
 ranch.tacc.utexas.edu:/stornext/ranch_01/ranch/users/01211/cmonstr/rda_gwas_july2020
 $ARCHIVER:/stornext/ranch_01/ranch/users/01211/cmonstr/rda_gwas_july2020
 
-#ls /corral-repl/utexas/tagmap/zach_shared/*.bam > bams
+>cpp
+for F in `ls /corral-repl/utexas/tagmap/zach_shared/*.bam`; do
+echo "cp $F ." >>cpp;
+done
+ls5_launcher_creator.py -j cpp -n cpp -a tagmap -t 4:00:00 -w 24 -e matz@utexas.edu -q normal
+sbatch cpp.slurm
+
+
+# indexing huge bam files, to make csi indices
+>baii
+for F in `ls *.bam`; do
+echo "samtools index -m 14 $F" >>baii;
+done
+ls5_launcher_creator.py -j baii -n baii -a tagmap -t 4:00:00 -w 4 -e matz@utexas.edu -q normal
+sbatch baii.slurm
+
+
+# extracting cladeC
+>s3
+for F in `ls *es.bam`; do
+echo "samtools view $F symbiont3 -bF 0x400 -O bam -o ${F/.marked_duplicates.bam/}.sym3.bam && samtools index -m 14 ${F/.marked_duplicates.bam/}.sym3.bam" >>s3;
+done
+ls5_launcher_creator.py -j s3 -n s3 -a tagmap -t 2:00:00 -w 4 -e matz@utexas.edu -q normal
+sbatch s3.slurm
+
+
+ls *sym3.bam > s3bams
+>s3i
+for F in `ls *sym3.bam`; do
+echo "samtools index -m 14 $F" >>s3i;
+done
+ls5_launcher_creator.py -j s3i -n s3i -a tagmap -t 0:30:00 -w 24 -e matz@utexas.edu
+sbatch s3i.slurm
+
+ls *sym4.bam > s4bams
+>s4i
+for F in `ls *sym4.bam`; do
+echo "samtools index -m 14 $F" >>s4i;
+done
+ls5_launcher_creator.py -j s4i -n s4i -a tagmap -t 0:30:00 -w 24 -e matz@utexas.edu
+sbatch s4i.slurm
+
+
+FILTERS="-uniqueOnly 1 -remove_bads 1 -minMapQ 20 -maxDepth 1000 -checkBamHeaders 0"
+TODO="-doQsDist 1 -doDepth 1 -doCounts 1 -dumpCounts 2"
+angsd -b s3bams -r symbiont3:1-1000000 -GL 1 $FILTERS $TODO -P 12 -out dd3 
+
+
+# extracting cladeD
+>s4
+for F in `ls *es.bam`; do
+echo "samtools view $F symbiont4 -bF 0x400 -O bam -o ${F/.marked_duplicates.bam/}.sym4.bam && samtools index -m 14 ${F/.marked_duplicates.bam/}.sym4.bam" >>s4;
+done
+ls5_launcher_creator.py -j s4 -n s4 -a tagmap -t 2:00:00 -w 4 -e matz@utexas.edu -q normal
+sbatch s4.slurm
+
+
+# ----- subsampling high-coverage data to 20% of reads, fixing headers
+
+cp /corral-repl/utexas/tagmap/zach_shared/Amil.symb.cat.genome.fasta* .
+samtools faidx $REF
+
+REF=Amil.symb.cat.genome.fasta
+>subsamp2
+for F in `ls /corral-repl/utexas/tagmap/zach_shared/*.bam`; do
+outname=`echo $F | perl -pe 's/\/corral-repl\/utexas\/tagmap\/zach_shared\/|\.marked_duplicates\.bam//g'`
+echo "samtools view -F 260 -s 0.2 $F | samtools view -bS -t ${REF}.fai -O bam -o ${outname}.subsampled.bam">>subsamp2;
+done
+ls5_launcher_creator.py -j subsamp2 -n subsamp2 -a mega2014 -t 4:00:00 -w 24 -e matz@utexas.edu -q normal
+sbatch subsamp2.slurm
+
+
 ls /corral-repl/utexas/tagmap/zach_shared/low_coverage/*.bam >>bams
-# manually edit: remove low-coverage files that are among high-coverage 
+
+# removing low-coverage files that are among high-coverage, also removing high-coverage files that are not among ba
+# used script hc_lc_bams.R
+ls *subsampled.bam
+cat hcbams bams.lc >bams.combo
+
+# running mpileup (to remove overlapping read-pairs)
+REF=Amil.symb.cat.genome.fasta
+echo "samtools mpileup -b bams.combo -f $REF --output-MQ >bams.qc.pileup">pile
+ls5_launcher_creator.py -j pile -n pile -a mega2014 -t 12:00:00 -w 1 -e matz@utexas.edu -q normal
+sbatch pile.slurm
+
+# Calculate fasta lengths, making bed file per-chromosome
+cat Amil.symb.cat.genome.fasta | awk '$0 ~ ">" {if (NR > 1) {print 0"\t"(c-1);} c=0;printf substr($0,2,100) "\t"; } $0 !~ ">" {c+=length($0);} END { print 0"\t"(c-1); }' > amil.bed
+
+# writing mpileup commands per chromosome
+REF=Amil.symb.cat.genome.fasta
+>pile.chroms
+for C in `seq 1 14`; do
+head -$C amil.bed | tail -1 >chr${C}.bed;
+echo "samtools mpileup -b bams.combo -l chr${C}.bed -f $REF --output-MQ >chr${C}.pileup">>pile.chroms
+done
+ls5_launcher_creator.py -j pile.chroms -n pile.chroms -a mega2014 -t 12:00:00 -w 8 -e matz@utexas.edu -q normal
+sbatch pile.chroms.slurm
+
+# for -minMaf 0.05, all good bams (incl those without traits)
+export FILTERS="-uniqueOnly 1 -remove_bads 1 -skipTriallelic 1 -minMapQ 20 -minQ 20 -dosnpstat 1 -doHWE 1 -maxHetFreq 0.5 -sb_pval 1e-5 -hetbias_pval 1e-5 -minInd 152 -snp_pval 1e-5 -minMaf 0.05 "
+export TODO8="-doMajorMinor 1 -doMaf 1 -doCounts 1 -makeMatrix 1 -doIBS 1 -doCov 1 -doGeno 8 -doPost 1 -doGlf 2"
+echo '#!/bin/bash
+#SBATCH -J zz8
+#SBATCH -n 1
+#SBATCH -N 1
+#SBATCH -p largemem512GB
+#SBATCH -o zz8.o%j
+#SBATCH -e zz8.e%j
+#SBATCH -t 24:00:00
+#SBATCH -A tagmap
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=matz@utexas.edu
+angsd -b bams.qc -GL 1 $FILTERS $TODO8 -P 12 -out zz8' > zz8
+zz8job=$(sbatch zz8 | grep "Submitted batch job" | perl -pe 's/\D//g')
+
+
+
+
 
 FILTERS="-uniqueOnly 1 -remove_bads 1 -minMapQ 20 -maxDepth 1000 -checkBamHeaders 0"
 TODO="-doQsDist 1 -doDepth 1 -doCounts 1 -dumpCounts 2"
 angsd -b bams -r chr2:1000-1001000 -GL 1 $FILTERS $TODO -P 12 -out dd 
 
 Rscript ~/bin/plotQC.R dd >qranks
+
 
 # rerunning for -doGeno 8 (ngsLD and GS in WGCNA)
 module load TACC-largemem
@@ -32,6 +148,32 @@ echo '#!/bin/bash
 #SBATCH --mail-user=matz@utexas.edu
 angsd -b bams.qc -GL 1 $FILTERS $TODO8 -P 12 -out zz8' > zz8
 zz8job=$(sbatch zz8 | grep "Submitted batch job" | perl -pe 's/\D//g')
+
+export FILTERS="-uniqueOnly 1 -remove_bads 1 -skipTriallelic 1 -minMapQ 20 -minQ 20 -dosnpstat 1 -doHWE 1 -maxHetFreq 0.5 -sb_pval 1e-5 -hetbias_pval 1e-5 -minInd 152 -snp_pval 1e-5 -minMaf 0.05 "
+export TODO8="-doMajorMinor 1 -doMaf 1 -doCounts 1 -makeMatrix 1 -doIBS 1 -doCov 1 -doGeno 8 -doPost 1 -doGlf 2"
+echo '#!/bin/bash
+#SBATCH -J zz9
+#SBATCH -n 1
+#SBATCH -N 1
+#SBATCH -p largemem512GB
+#SBATCH -o zz8.o%j
+#SBATCH -e zz8.e%j
+#SBATCH -t 12:00:00
+#SBATCH -A tagmap
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=matz@utexas.edu
+angsd -b bams.qc -r chr1 -GL 1 $FILTERS $TODO8 -P 12 -out zz9' > zz9
+zz8job=$(sbatch zz9 | grep "Submitted batch job" | perl -pe 's/\D//g')
+
+zcat zz9.geno.gz | awk '{ printf $1"\t"$2; for(i=4; i<=NF-1; i=i+3) { i2=i+1; printf "\t"$i+2*$i2} ; printf "\n";}' | gzip > zz9.postAlleles.gz
+
+# saving read counts for a single SNP
+# chr1_10235367
+export TODO="-doMajorMinor 1 -doMaf 1 -doCounts 1 -dumpCounts 4"
+angsd -b bams.qc -r chr1:10235367 -GL 1 $TODO -P 12 -out chr1_10235367
+
+zcat zz9.geno.gz | head -1000 > genotest
+cat zz9.postAlleles | head -1000 >patest
 
 # to make BCF file (not needed typically, skip this)
 export FILTERS="-uniqueOnly 1 -remove_bads 1 -skipTriallelic 1 -minMapQ 20 -minQ 20 -dosnpstat 1 -doHWE 1 -maxHetFreq 0.5 -sb_pval 1e-5 -hetbias_pval 1e-5 -minInd 152 -snp_pval 1e-5 -minMaf 0.05 "
@@ -125,20 +267,47 @@ sbatch ldl.slurm
 
 
 #-----------
+cd 
+rm -rf Multivariate_GWAS/
+git clone https://github.com/z0on/Multivariate_GWAS.git
+cd -
 
 # get glmnet packade for R below 3.6 here: https://packages.debian.org/source/stable/r-cran-glmnet 
 
 # running 50 hold-out replicates on all chromosomes for proportion of D
 >pdd
-for R in `seq 1 50`; do
+for R in `seq 1 25`; do
 REP=rep${R}_25;
-for CHR in `ls *postAlleles.gz`; do
+for CHR in `ls chr*postAlleles.gz`; do
 OUTN=`echo $CHR | perl -pe 's/.+(chr\d+).+/$1/'`;
-echo "Rscript ~/bin/RDA_GWAS.R gt=$CHR covars.e=reefsites covars.g=technical.covars traits=pd.traits gdist.samples=bams.qc plots=FALSE gdist=zz8.ibsMat hold.out=$REP">>pdd;
+echo "Rscript ~/Multivariate_GWAS/RDA_GWAS.R gt=$CHR covars.e=reefsites covars.g=technical.covars traits=pd.traits gdist.samples=bams.qc plots=FALSE gdist=zz8.ibsMat hold.out=$REP">>pdd;
 done;
 done
-ls5_launcher_creator.py -j pdd -n pdd -a tagmap -e matz@utexas.edu -t 0:10:00 -w 24 -q normal
+ls5_launcher_creator.py -j pdd -n pdd -a tagmap -e matz@utexas.edu -t 0:10:00 -w 6 -q normal
 sbatch pdd.slurm
+
+
+>compchrom
+ls chr*postAlleles.gz >gts
+for R in `seq 1 25`; do
+REP=rep${R}_25;
+ls chr*${REP}_gwas.RData >gws_${REP};
+echo "Rscript ~/Multivariate_GWAS/compile_chromosomes.R in=gws_${REP} gts=gts gt.samples=bams.qc traits=traits_etc_${REP}.RData">>compchrom;
+done
+ls5_launcher_creator.py -j compchrom -n compchrom -a tagmap -t 2:00:00 -w 1 -e matz@utexas.edu -q normal
+sbatch compchrom.slurm
+
+>compchrom0
+ls chr*postAlleles.gz >gts
+for R in `seq 1 25`; do
+REP=rep${R}_25;
+ls chr*${REP}_gwas.RData >gws_${REP};
+echo "Rscript ~/Multivariate_GWAS/compile_chromosomes.R in=gws_${REP} traits=traits_etc_${REP}.RData">>compchrom0;
+done
+ls5_launcher_creator.py -j compchrom0 -n compchrom0 -a tagmap -t 2:00:00 -w 24 -e matz@utexas.edu -q normal
+sbatch compchrom0.slurm
+
+
 
 # running 50 hold-out replicates on all chromosomes for bleaching traits
 >bll
