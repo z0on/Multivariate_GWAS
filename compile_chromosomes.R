@@ -183,6 +183,7 @@ ll=load(traitfile)
 gwas.c=list()
 message("reading data...")
 for (f in 1:length(infiles)) {
+	message(infiles[f])
 	ll=load(infiles[f])
 	gwas.c[[f]]=gwas
 	if(runGLMnet) {
