@@ -193,6 +193,18 @@ for (f in 1:length(infiles)) {
 		row.names(gt)=paste(gt[,1],gt[,2],sep=":")
 		gt=gt[,-c(1,2,ncol(gt))]
 		colnames(gt)=bams
+
+				# removing sites with NAs and invariable sites
+		message("removing sites with NA entries and invariant sites...")
+		gt=na.omit(gt)
+		sds=apply(gt,1,sd)
+		gt=gt[sds>0,]
+		
+		message("removing low-freq (maf<0.05) sites...")
+		af=apply(gt,1,sum)
+		af=af/(2*ncol(gt))
+		gt=gt[af>0.05,]
+		
 		gts.test[[f]]=gt[,goods.test]
 		gts.use[[f]]=gt[,goods.use]
 	}
