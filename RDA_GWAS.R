@@ -239,7 +239,6 @@ if(covs.e!=0 & covs.g!=0 ) { goods.covars=intersect(goods.covars.e,goods.covars.
 
 message("reading genotypes...",appendLF=FALSE)
 gt=fread(gtfile,nThread=4)
-head(gt)
 
 message("done")
 # removing possibly duplicated sites
@@ -250,10 +249,12 @@ gt=gt[,-c(1,2)]
 colnames(gt)=bams
 
 # removing sites with NAs and invariable sites
+message("removing sites with NA entries and invariant sites...")
 gt=na.omit(gt)
 sds=apply(gt,1,sd)
 gt=gt[sds>0,]
-# removing low-freq sites
+
+message("removing low-freq (maf<0.05) sites...")
 af=apply(gt,1,sum)
 af=af/(2*ncol(gt))
 gt=gt[af>0.05,]
