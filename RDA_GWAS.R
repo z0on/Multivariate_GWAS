@@ -180,20 +180,21 @@ options(datatable.fread.datatable=FALSE)
 
 #---- reading and aligning data
 
-#    setwd("~/Dropbox/angsd_pileup/")
-#          gtfile = "chr1.postAlleles.gz"
-#          covs.g = "depth"
-         # covs.g=0
-#          covs.e = "reefsites"
-#          traits = "upd_propD.tab"
-#          bams = "goodbams"
-#          ibs="ibsa.ibsMat"
-#          plots=T
-#          nsites=5500000
+ #   setwd("~/Dropbox/impute_gwas/")
+  #        gtfile = "chr8.postAlleles.gz"
+     #     gtfile = "../angsd_pileup/chr1.postAlleles.gz"
+   #      covs.g = "../angsd_pileup/depth"
+        #  covs.g=0
+    #      covs.e = "reefsites"
+    #      traits = "upd_propD.tab"
+    #      bams = "samples"
+    #      ibs="aligned.ibsMat"
+    #      plots=T
+    #      nsites=5500000
   # #        prune.dist='~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/chr8.maf01.geno.gz.LD.ldlm01.RData'
-#           prune.dist=25000
-#          hold.out="rep10_10"
-        # hold.out=0
+    #       prune.dist=25000
+    #      hold.out="rep10_25"
+       #   hold.out=0
 
 outfile=paste(sub("\\..+","",gtfile),sub("\\..+","",traits),sub("\\..+","",hold.out),sep=".")
 
@@ -238,13 +239,25 @@ if(covs.e!=0 & covs.g!=0 ) { goods.covars=intersect(goods.covars.e,goods.covars.
 
 message("reading genotypes...",appendLF=FALSE)
 gt=fread(gtfile,nThread=4)
+head(gt)
+
 message("done")
 # removing possibly duplicated sites
 gt=distinct(gt,paste(gt[,1],gt[,2],sep=":"),.keep_all=T)
 row.names(gt)=paste(gt[,1],gt[,2],sep=":")
-gt=gt[,-c(1,2,ncol(gt))]
+if(grep("paste",names(gt)[ncol(gt)])==1) { gt=gt[,-ncol(gt)]}
+gt=gt[,-c(1,2)]
 colnames(gt)=bams
 
+# removing sites with NAs and invariable sites
+gt=na.omit(gt)
+sds=apply(gt,1,sd)
+gt=gt[sds>0,]
+# removing low-freq sites
+af=apply(gt,1,sum)
+af=af/(2*ncol(gt))
+gt=gt[af>0.05,]
+dim(gt)
 
 # ---- aligning all data
 
@@ -272,9 +285,9 @@ if(covs.g!=0) {
 			 }
 	 }	 
 	 colnames(covs)=paste("co",1:ncol(covs),sep="")
+	 row.names(covs)=row.names(covars.g)
+	 covcols=colnames(covs)
 }
-row.names(covs)=row.names(covars.g)
-covcols=colnames(covs)
 
 # ---- splitting into train and test sets
 
@@ -292,8 +305,10 @@ if (hold.out!=0) {
 } else { goods.use=goods}
 
 ibs=ibs[goods.use,goods.use]
-covs=data.frame(covs[goods.use,])
-colnames(covs)=covcols
+if(covs.g!=0) { 
+  covs=data.frame(covs[goods.use,])
+  colnames(covs)=covcols
+}
 traits=data.frame(traits[goods.use,])
 rownames(traits)=goods.use
 colnames(traits)=trcols
@@ -327,8 +342,6 @@ if(covs.e!=0) {
 	}
 }
 
-# af=apply(gt,1,sum)
-# af=af/(2*ncol(gt))
 # hist(af,breaks=40)
 
 #------- computing RDA and SNP scores against CAP1
@@ -423,7 +436,7 @@ gwas$chrom=as.factor(gwas$chrom)
 #---- manhattan
 
 if(plots) {
-	plot(manhat(gwas[abs(gwas$zscore)>2,]))
+	plot(manhat(gwas[abs(gwas$zscore)>1,]))
 }
 
 #----------- pruning SNPs by z-scores and distance, computing simple betas and r2s (by chromosome)
