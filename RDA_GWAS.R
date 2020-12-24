@@ -647,6 +647,6 @@ if(plots){
 	plot(re.rr~re.true,allpreds,main=paste("Nsnps:",N," glmnet"),ylab="predicted",xlab="observed")
 	mtext(paste("R2 =",round(cor(allpreds$rr,allpreds$true)^2,2)))
 
-	dev.off()
+	invisible(dev.off())
 }
 
