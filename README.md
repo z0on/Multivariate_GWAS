@@ -30,7 +30,9 @@ Simply clone the github repository and use R scripts as command-line programs (e
 
 `hold.out=[filename]`  File listing sample names to hold out from the whole analysis for subsequent testing of the polygenic score's prediction accuracy. May be omitted.
 
-### Other *RDA_GWAS.R* arguments
+### Other optional *RDA_GWAS.R* arguments
+
+`badsites=[filename]` List of sites to explude from analysis, in the format chr1:12345 (one site per row).
 
 `plots=TRUE` Whether to plot diagnostic plots (`[outfile]_plots.pdf`).
 
