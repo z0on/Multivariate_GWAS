@@ -116,6 +116,8 @@ gdist.samples=[filename]   single-column list of sample names corresponding to t
                            AND genetic distance matrix. Could be filenames with leading path and 
                            trailing extension (these will be removed).
 							
+badsites=[filename]  list of sites to exclude, one per line in format chr1:12345
+
 hold.out=[filename]  list of sample names to hold out from the whole analysis for testing the predictors.
 
 plots=TRUE           whether to plot diagnostic plots ([out]_plots.pdf)
@@ -158,6 +160,9 @@ bams =grep("gdist.samples=",commandArgs())
 if (length(bams)==0) { stop ("specify file listing samples for genetic distances (gdist.samples=filename)\nRun script without arguments to see all options\n") }
 bams =sub("gdist.samples=","", commandArgs()[bams])
 
+badss =grep("badsites=",commandArgs())
+if(length(badss)>0) { badsites=as.character(sub("badsites=","", commandArgs()[badss])) } else { badsites=0 }
+
 if(length(grep("plots=F",commandArgs()))>0) { plots=FALSE } else { plots=TRUE }
 nsites =grep("nsites=",commandArgs())
 if(length(nsites)>0) { nsites=as.numeric(sub("nsites=","", commandArgs()[nsites])) } else { nsites=5500000 }
@@ -180,21 +185,23 @@ options(datatable.fread.datatable=FALSE)
 
 #---- reading and aligning data
 
- #   setwd("~/Dropbox/impute_gwas/")
-  #        gtfile = "chr8.postAlleles.gz"
-     #     gtfile = "../angsd_pileup/chr1.postAlleles.gz"
-   #      covs.g = "../angsd_pileup/depth"
-        #  covs.g=0
-    #      covs.e = "reefsites"
-    #      traits = "upd_propD.tab"
-    #      bams = "samples"
-    #      ibs="aligned.ibsMat"
-    #      plots=T
-    #      nsites=5500000
-  # #        prune.dist='~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/chr8.maf01.geno.gz.LD.ldlm01.RData'
-    #       prune.dist=25000
-    #      hold.out="rep10_25"
-       #   hold.out=0
+#    setwd("~/Dropbox/impute_gwas/")
+#         gtfile = "chr8.postAlleles.gz"
+# #     gtfile = "../angsd_pileup/chr1.postAlleles.gz"
+# #      covs.g = "../angsd_pileup/depth"
+#         covs.g=0
+#       covs.e = "reefsites"
+#       traits = "upd_propD.tab"
+#       bams = "samples"
+#       ibs="aligned.ibsMat"
+#       plots=T
+#       nsites=5500000
+#  #        prune.dist='~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/chr8.maf01.geno.gz.LD.ldlm01.RData'
+#        prune.dist=25000
+#       hold.out="rep10_25"
+#  #     badsites="chr8.badsites"
+#       badsites=0
+#       #   hold.out=0
 
 outfile=paste(sub("\\..+","",gtfile),sub("\\..+","",traits),sub("\\..+","",hold.out),sep=".")
 
@@ -258,7 +265,13 @@ message("removing low-freq (maf<0.05) sites...")
 af=apply(gt,1,sum)
 af=af/(2*ncol(gt))
 gt=gt[af>0.05,]
-dim(gt)
+
+# ----- reading bad sites, removing them
+
+if(is.character(badsites)) {
+  badsi=scan(badsites,what="character")
+  gt=gt[!(row.names(gt) %in% badsi),]
+}
 
 # ---- aligning all data
 
