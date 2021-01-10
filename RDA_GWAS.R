@@ -35,6 +35,7 @@ getEmpP <- function(Obs, Null,nq=10000){
 #--------- manhattan plot function
 
 manhat=function(mh) {
+  require(ggplot2)
 	mh=mh[grep("chr",mh$chrom),]
 	mh$chrN=gsub("\\D","",mh$chrom)
 	mh$chrom=factor(mh$chrom,levels=unique(mh$chrom)[order(as.numeric(unique(mh$chrN)))])
@@ -185,8 +186,8 @@ options(datatable.fread.datatable=FALSE)
 
 #---- reading and aligning data
 
-#    setwd("~/Dropbox/impute_gwas/")
-#         gtfile = "chr8.postAlleles.gz"
+#    setwd("/stor/work/Matz/impute_gwas/")
+#         gtfile = "chr3.postAlleles.gz"
 # #     gtfile = "../angsd_pileup/chr1.postAlleles.gz"
 # #      covs.g = "../angsd_pileup/depth"
 #         covs.g=0
@@ -198,9 +199,9 @@ options(datatable.fread.datatable=FALSE)
 #       nsites=5500000
 #  #        prune.dist='~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/chr8.maf01.geno.gz.LD.ldlm01.RData'
 #        prune.dist=25000
-#       hold.out="rep10_25"
-#  #     badsites="chr8.badsites"
-#       badsites=0
+#       hold.out="rep100_20"
+#      badsites="chr3.badsites"
+#   #    badsites=0
 #       #   hold.out=0
 
 outfile=paste(sub("\\..+","",gtfile),sub("\\..+","",traits),sub("\\..+","",hold.out),sep=".")
@@ -269,6 +270,7 @@ gt=gt[af>0.05,]
 # ----- reading bad sites, removing them
 
 if(is.character(badsites)) {
+  message("removing bad sites...\n")
   badsi=scan(badsites,what="character")
   gt=gt[!(row.names(gt) %in% badsi),]
 }
@@ -360,8 +362,6 @@ if(covs.e!=0) {
 
 #------- computing RDA and SNP scores against CAP1
 
-if (plots) { pdf(paste(outfile,"_plots.pdf",sep="")) }
-
 message("computing ordination and SNP scores...",appendLF=FALSE)
 
 # using scaled genotypes
@@ -372,12 +372,14 @@ if(covs.g!=0) {
 } 
 
 if(plots) { 
+  png(paste(outfile,"_ordination.png",sep=""),height=3000,width=2800,res=400)
 # crosses - unadjusted (measured) per-sample trait values, points - adjusted based on genotypes (used for GWAS)
 	plot(cap,scaling=1, choices=c(1,101),display=c("wa","cn"),mgp=c(2.3,1,0), main="sample ordination",type="n") 
 	points(cap,scaling=1, choices=c(1,101),display="wa",pch=21,col="grey10",bg="skyblue")
 	points(cap,scaling=1, choices=c(1,101),display="lc",pch=4,col="coral")
 	ordispider(cap,scaling=1, choices=c(1,101),col="coral")
-	text(cap, scaling=1, display="bp", col="firebrick", cex=1.5, lwd=3,choices=c(1,2))
+	text(cap, scaling=1, display="bp", col="firebrick", cex=1, lwd=3,choices=c(1,2))
+	invisible(dev.off())
 	}
 
 # correcting sign to have positive scores for positive traits[,1] values
@@ -394,18 +396,20 @@ nullpc=round(ncol(gt)*0.75)
 #------- q-q plot to see if there is signal
 
 if(plots) {	
-	nulls=data.frame(scale(scores(cap,display="species",choices=c(nullpc:(nullpc+3))))) 
+  png(paste(outfile,"_qq.png",sep=""),height=1900,width=1600,res=400)
+  nulls=data.frame(scale(scores(cap,display="species",choices=c(nullpc:(nullpc+3))))) 
 	nulls=stack(nulls)$values
 	qqplot(nulls,snp.scores,cex=0.7,main="q-q",mgp=c(2.3,1,0))
 	abline(0,1,col="red")	
+	invisible(dev.off())
 }
 
 #----- "caviar plots", colored rings: >2,3,4,5 SD from 0
 
 if(plots) {
-	
+  png(paste(outfile,"_snpScores.png",sep=""),height=1600,width=1600,res=400)
 	pscores=data.frame(scale(flip*scores(cap,display="species",choices=c(1,nullpc))))
-	names(pscores)=c("CAP1","MDS100")
+	names(pscores)=c("CAP1","MDS120")
 	biplot=data.frame(cap$CCA$biplot)
 	if(ncol(traits)<2) { biplot$CAP2=0 }
 	biplot$x1=0
@@ -418,10 +422,12 @@ if(plots) {
 	pscores$z[distfrom0>4]=4
 	pscores$z[distfrom0>5]=5
 	pscores$z=factor(pscores$z)
-	ggplot()+
-		geom_point(data=pscores,aes(CAP1,MDS100,fill=z,color=z),shape = 21, colour = "grey20")+
+	pp=ggplot()+
+		geom_point(data=pscores,aes(CAP1,MDS120,fill=z,color=z),shape = 21, colour = "grey20")+
 		geom_segment(data=biplot,aes(x=x1,y=y1,xend=CAP1,yend=CAP2,color="cyan3"),arrow = arrow(length = unit(0.3, "cm")))+
 		theme_bw()+coord_equal()+theme(legend.position="n")
+	plot(pp)
+	invisible(dev.off())
 }
 
 #----------computing p-values
@@ -450,7 +456,9 @@ gwas$chrom=as.factor(gwas$chrom)
 #---- manhattan
 
 if(plots) {
+  png(paste(outfile,"_manhattan.png",sep=""),height=1600,width=4800,res=400)
 	plot(manhat(gwas[abs(gwas$zscore)>1,]))
+	invisible(dev.off())
 }
 
 #----------- pruning SNPs by z-scores and distance, computing simple betas and r2s (by chromosome)
@@ -539,7 +547,9 @@ message(length(chosen)," blips left after pruning")
 
 # replotting pruned manhattan plot
 if (plots) { 
+  png(paste(outfile,"_manhattanPruned.png",sep=""),height=1600,width=4800,res=400)
 	plot(manhat(gwas[chosen,]))
+	invisible(dev.off())
 }
 
 #----- computing betas and r2s
@@ -596,7 +606,8 @@ save(gwas,file=paste(outfile,"_gwas.RData",sep=""))
 #---------------- predictng test set (if not specified, predict same set)
 
 if(plots){
-
+  png(paste(outfile,"_predictions.png",sep=""),height=1200,width=3000,res=400)
+  par(mfrow=c(1,3))
 	goodst=row.names(traits.test)[which(!is.na(traits.test[,1]))]
 	if(is.character(traits.test[goodst[1],1])) { 
 		tt=as.numeric(as.factor(traits.test[goodst,1])) 
@@ -632,7 +643,7 @@ if(plots){
 		 allpreds=zr[[s]]
 		 zr2=append(zr2,cor(allpreds$lm,allpreds$true))
 	 }
-	plot(zr2~Ns,xlab="N(SNPs)",ylab="prediction R",log="x")
+	plot(zr2~Ns,xlab="N(SNPs)",ylab="prediction R",log="x",mgp=c(2.3,1,0))
 	lines(zr2~Ns)
 
 	best=which(zr2==max(zr2))[1]
@@ -643,8 +654,8 @@ if(plots){
 	allpreds$re.lm=rescale(allpreds$lm,range(allpreds$true))+rnorm(nrow(allpreds),0,jitter)
 	allpreds$re.true=allpreds$true+rnorm(nrow(allpreds),0,jitter)
 
-	plot(re.lm~re.true,allpreds,main=paste("Nsnps:",N," lm"),ylab="predicted",xlab="observed")
-	mtext(paste("R2 =",round(cor(allpreds$lm,allpreds$true)^2,2)))
+	plot(re.lm~re.true,allpreds,main=paste("Nsnps:",N," lm"),ylab="predicted",xlab="observed",mgp=c(2.3,1,0))
+	mtext(paste("R2 =",round(cor(allpreds$lm,allpreds$true)^2,2)),cex=0.6)
 
 # regularized prediction
 	rr=c()
@@ -657,8 +668,8 @@ if(plots){
 	allpreds$re.rr=rescale(allpreds$rr,range(allpreds$true))+rnorm(nrow(allpreds),0,jitter)
 	allpreds$re.true=allpreds$true+rnorm(nrow(allpreds),0,jitter)
 	
-	plot(re.rr~re.true,allpreds,main=paste("Nsnps:",N," glmnet"),ylab="predicted",xlab="observed")
-	mtext(paste("R2 =",round(cor(allpreds$rr,allpreds$true)^2,2)))
+	plot(re.rr~re.true,allpreds,main=paste("Nsnps:",N," glmnet"),ylab="predicted",xlab="observed",mgp=c(2.3,1,0))
+	mtext(paste("R2 =",round(cor(allpreds$rr,allpreds$true)^2,2)),cex=0.6)
 
 	invisible(dev.off())
 }
