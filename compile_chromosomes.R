@@ -154,14 +154,14 @@ options(datatable.fread.datatable=FALSE)
 
 #----------- debug params
 
-# setwd("~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/")
-  # infile = "gwass0"
-  # gts="gts"
-  # traits="traits_etc_0.RData"
-  # forceAlpha=-1
-  # runGLMnet=TRUE
-  # plots=TRUE
-  # bams = "bams.qc"
+# setwd("/work/01211/cmonstr/impute_gwas")
+# infile = "gws_rep100_20"
+# gts="gts"
+# traitfile="traits_etc_rep100_20.RData"
+# forceAlpha=-1
+# runGLMnet=TRUE
+# plots=TRUE
+# bams = "samples"
 
 # ----- reading all chromosome data
 
@@ -187,11 +187,15 @@ for (f in 1:length(infiles)) {
 	ll=load(infiles[f])
 	gwas.c[[f]]=gwas
 	if(runGLMnet) {
+
 	  #---- loading genotypes
-	  
-	  message("reading genotypes...",appendLF=FALSE)
-	  gt=fread(gtfile,nThread=4)
-	  gt=gt[row.names(gwas),]
+	  gt=fread(gtss[f],nThread=4)
+	  row.names(gt)=paste(gt[,1],gt[,2],sep=":")
+	  gt=gt[,-c(1,2)]
+	  colnames(gt)=bams
+	  goods=intersect(row.names(gt), row.names(gwas))
+	  gt=gt[goods,]
+	  gwas=gwas[goods,]
 	  
 	  # message("done")
 	  # # removing possibly duplicated sites
@@ -268,7 +272,7 @@ if(runGLMnet) {
 	gwas$beta.rr=0
 	preds.rr=predict(model,t(gt.test[chosen,]),type="response",s=lambda)
 	betas=as.matrix(coef(model,s=lambda))[-1]
-	gwas$beta.rr[chosen]=betas
+	gwas[chosen,"beta.rr"]=betas
 }
 
 #--------------- predictions of hold-out samples (or back-prediction of the same)
