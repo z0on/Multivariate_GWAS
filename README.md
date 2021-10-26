@@ -32,7 +32,7 @@ Simply clone the github repository and use R scripts as command-line programs (e
 
 ### Other optional *RDA_GWAS.R* arguments
 
-`badsites=[filename]` List of sites to explude from analysis, in the format `chr1:12345` (one site per row).
+`badsites=[filename]` List of sites to exclude from analysis, in the format `chr1:12345` (one site per row).
 
 `plots=TRUE` Whether to plot diagnostic plots (`[outfile]_plots.pdf`).
 
