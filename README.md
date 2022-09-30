@@ -149,7 +149,7 @@ The output file `zz8.ibsMat` is the genetic distances matrix (identity-by-state)
 
 First, let's unarchive it and split by chromosome:
 ```bash
-zcat zz8.geno.gz | awk -F, 'BEGIN { FS = "\t" } ; {print > $1".split.geno"}'
+zcat zz8.geno.gz | awk -F, 'BEGIN { FS = "\t" } ; {print >> $1".split.geno"}'
 ```
 If you have some short contigs in addition to chromosomes, you might wish to concatenate them together into a separate `unplaced.split.geno` file before proceeding. If your genome is highly fragmented, pre-concatenate it into "fake chromosomes" before mapping (see [`concat_fasta.pl`](https://github.com/z0on/2bRAD_denovo/blob/master/concatFasta.pl)).
 
