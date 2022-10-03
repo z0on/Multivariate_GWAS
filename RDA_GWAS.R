@@ -36,9 +36,9 @@ getEmpP <- function(Obs, Null,nq=10000){
 
 manhat=function(mh) {
   require(ggplot2)
-	mh=mh[grep("chr",mh$chrom),]
-	mh$chrN=gsub("\\D","",mh$chrom)
-	mh$chrom=factor(mh$chrom,levels=unique(mh$chrom)[order(as.numeric(unique(mh$chrN)))])
+	# mh=mh[grep("chr",mh$chrom),]
+	# mh$chrN=gsub("\\D","",mh$chrom)
+	mh$chrom=factor(mh$chrom,levels=unique(mh$chrom)[order(unique(mh$chrom))])
 	sign=as.numeric(mh$zscore>0)
 	sign[sign==0]=-1
 	mh$pos.Mb=mh$pos/1e+6
@@ -186,23 +186,18 @@ options(datatable.fread.datatable=FALSE)
 
 #---- reading and aligning data
 
-#    setwd("/stor/work/Matz/impute_gwas/")
-#         gtfile = "chr3.postAlleles.gz"
-# #     gtfile = "../angsd_pileup/chr1.postAlleles.gz"
-# #      covs.g = "../angsd_pileup/depth"
-#         covs.g=0
-#       covs.e = "reefsites"
-#       traits = "upd_propD.tab"
-#       bams = "samples"
-#       ibs="aligned.ibsMat"
-#       plots=T
-#       nsites=5500000
-#  #        prune.dist='~/Dropbox/amil_RDA_association_jun2020/RDA_GWAS/chr8.maf01.geno.gz.LD.ldlm01.RData'
-#        prune.dist=25000
-#       hold.out="rep100_20"
-#      badsites="chr3.badsites"
-#   #    badsites=0
-#       #   hold.out=0
+# setwd("~/Dropbox/refoundtypoinrda_gwasworkflow")
+# gtfile = "chr01.postAlleles"
+# covs.g=0
+# covs.e = 0
+# traits = "mitogroup.txt"
+# bams = "samples.txt"
+# ibs="angsdSNPs.ibsMat"
+# plots=T
+# nsites=1000000
+# prune.dist=25000
+# hold.out="s10a"
+# badsites=0
 
 outfile=paste(sub("\\..+","",gtfile),sub("\\..+","",traits),sub("\\..+","",hold.out),sep=".")
 
@@ -240,7 +235,7 @@ if(covs.g!=0) {
 }
 goods.covars=goods.traits
 if(covs.e!=0 & covs.g!=0 ) { goods.covars=intersect(goods.covars.e,goods.covars.g) } else { 
-	if(covs.e!=0 ) { goods.covars=goods.covars.e } else { goods.covars=goods.covars.g } 
+  if(covs.e!=0 ) { goods.covars=goods.covars.e } else { if (covs.g!=0) {goods.covars=goods.covars.g } }
 }
 
 #---- loading genotypes
@@ -364,6 +359,8 @@ if(covs.e!=0) {
 
 message("computing ordination and SNP scores...",appendLF=FALSE)
 
+nullpc=round(ncol(gt)*0.75)
+
 # using scaled genotypes
 if(covs.g!=0) { 
 	cap=capscale(ibs~.+Condition(as.matrix(covs)),data=traits,comm=scale(t(gt)))
@@ -374,10 +371,10 @@ if(covs.g!=0) {
 if(plots) { 
   png(paste(outfile,"_ordination.png",sep=""),height=3000,width=2800,res=400)
 # crosses - unadjusted (measured) per-sample trait values, points - adjusted based on genotypes (used for GWAS)
-	plot(cap,scaling=1, choices=c(1,101),display=c("wa","cn"),mgp=c(2.3,1,0), main="sample ordination",type="n") 
-	points(cap,scaling=1, choices=c(1,101),display="wa",pch=21,col="grey10",bg="skyblue")
-	points(cap,scaling=1, choices=c(1,101),display="lc",pch=4,col="coral")
-	ordispider(cap,scaling=1, choices=c(1,101),col="coral")
+	plot(cap,scaling=1, choices=c(1,nullpc),display=c("wa","cn"),mgp=c(2.3,1,0), main="sample ordination",type="n") 
+	points(cap,scaling=1, choices=c(1,nullpc),display="wa",pch=21,col="grey10",bg="skyblue")
+	points(cap,scaling=1, choices=c(1,nullpc),display="lc",pch=4,col="coral")
+	ordispider(cap,scaling=1, choices=c(1,nullpc),col="coral")
 	text(cap, scaling=1, display="bp", col="firebrick", cex=1, lwd=3,choices=c(1,2))
 	invisible(dev.off())
 	}
@@ -391,7 +388,7 @@ sample.scores=scores(cap,display="sites",choices=1)*flip
 names(snp.scores)=row.names(cap$CCA$v)
 sample.scores=rescale(sample.scores,range(traits[,1]))
 cap$CCA$biplot[,1]=cap$CCA$biplot[,1]*flip
-nullpc=round(ncol(gt)*0.75)
+
 
 #------- q-q plot to see if there is signal
 
@@ -409,7 +406,7 @@ if(plots) {
 if(plots) {
   png(paste(outfile,"_snpScores.png",sep=""),height=1600,width=1600,res=400)
 	pscores=data.frame(scale(flip*scores(cap,display="species",choices=c(1,nullpc))))
-	names(pscores)=c("CAP1","MDS120")
+	names(pscores)=c("CAP1","farMDS")
 	biplot=data.frame(cap$CCA$biplot)
 	if(ncol(traits)<2) { biplot$CAP2=0 }
 	biplot$x1=0
@@ -423,8 +420,9 @@ if(plots) {
 	pscores$z[distfrom0>5]=5
 	pscores$z=factor(pscores$z)
 	pp=ggplot()+
-		geom_point(data=pscores,aes(CAP1,MDS120,fill=z,color=z),shape = 21, colour = "grey20")+
+		geom_point(data=pscores,aes(CAP1,farMDS,fill=z,color=z),shape = 21, colour = "grey20")+
 		geom_segment(data=biplot,aes(x=x1,y=y1,xend=CAP1,yend=CAP2,color="cyan3"),arrow = arrow(length = unit(0.3, "cm")))+
+	  ylab(paste("MDS",nullpc,sep=""))+
 		theme_bw()+coord_equal()+theme(legend.position="n")
 	plot(pp)
 	invisible(dev.off())
@@ -432,7 +430,9 @@ if(plots) {
 
 #----------computing p-values
 
-nulls=data.frame(scale(scores(cap,display="species",choices=c((nullpc-100):nullpc))))
+nullpcs=round(c(ncol(gt)*0.25,ncol(gt)*0.9))
+if(nullpcs[2]-nullpcs[1]>100) { nullpcs=c(nullpc-79,nullpc+20)}
+nulls=data.frame(scale(scores(cap,display="species",choices=nullpcs)))
 nulls=stack(nulls)$values
 message("calculating pvalues...")
 pvals=getEmpP(snp.scores,nulls)
@@ -673,4 +673,3 @@ if(plots){
 
 	invisible(dev.off())
 }
-
