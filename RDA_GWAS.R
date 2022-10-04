@@ -650,6 +650,13 @@ if(plots){
 	allpreds=zr[[ns[best]]]
 	N=ns[best]
 
+	
+	message("\n------------\nSimple lm prediction:")
+	message("    N SNPs: ",N)
+	message("    R2: ",round(max(zr2),2))
+	print(head(gwas[snps[N],c("zscore","beta","beta.rr","r2")]))
+	
+	
 	jitter=0.01*max(allpreds$true)
 	allpreds$re.lm=rescale(allpreds$lm,range(allpreds$true))+rnorm(nrow(allpreds),0,jitter)
 	allpreds$re.true=allpreds$true+rnorm(nrow(allpreds),0,jitter)
@@ -670,6 +677,11 @@ if(plots){
 	
 	plot(re.rr~re.true,allpreds,main=paste("Nsnps:",N," glmnet"),ylab="predicted",xlab="observed",mgp=c(2.3,1,0))
 	mtext(paste("R2 =",round(cor(allpreds$rr,allpreds$true)^2,2)),cex=0.6)
-
 	invisible(dev.off())
+	
+	message("\n------------\nRegularized regression prediction:")
+	message("    R2: ",round(cor(allpreds$rr,allpreds$true)^2,2))
+	message("    top ten SNPs:")
+	print(head(gwas[chosen,c("zscore","beta","beta.rr","r2")][order(gwas[chosen,"beta.rr"],decreasing=T),]))
+	
 }
