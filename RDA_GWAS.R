@@ -680,6 +680,7 @@ if(plots){
 	invisible(dev.off())
 	
 	message("\n------------\nRegularized regression prediction:")
+	message("    N snps: ",N)
 	message("    R2: ",round(cor(allpreds$rr,allpreds$true)^2,2))
 	message("    top ten SNPs:")
 	print(head(gwas[chosen,c("zscore","beta","beta.rr","r2")][order(gwas[chosen,"beta.rr"],decreasing=T),]))
