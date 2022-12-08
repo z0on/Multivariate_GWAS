@@ -654,7 +654,7 @@ if(plots){
 	message("\n------------\nSimple lm prediction:")
 	message("    N SNPs: ",N)
 	message("    R2: ",round(max(zr2),2))
-	print(head(gwas[snps[N],c("zscore","beta","beta.rr","r2")]))
+	print(head(gwas[snps[1:N],c("zscore","beta","beta.rr","r2")]))
 	
 	
 	jitter=0.01*max(allpreds$true)
