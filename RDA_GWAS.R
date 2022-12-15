@@ -646,7 +646,7 @@ if(plots){
 	plot(zr2~Ns,xlab="N(SNPs)",ylab="prediction R",log="x",mgp=c(2.3,1,0))
 	lines(zr2~Ns)
 
-	best=which(zr2==max(zr2))[1]
+	best=which(zr2==max(na.omit(zr2)))[1]
 	allpreds=zr[[ns[best]]]
 	N=ns[best]
 
