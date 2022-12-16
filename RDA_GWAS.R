@@ -641,9 +641,9 @@ if(plots){
 	for (s in ns) {
 		 Ns=append(Ns,s)
 		 allpreds=zr[[s]]
-		 zr2=append(zr2,cor(allpreds$lm,allpreds$true)^2)
+		 zr2=append(zr2,cor(allpreds$lm,allpreds$true))
 	 }
-	plot(zr2~Ns,xlab="N(SNPs)",ylab="prediction R2",log="x",mgp=c(2.3,1,0))
+	plot(zr2~Ns,xlab="N(SNPs)",ylab="prediction R",log="x",mgp=c(2.3,1,0))
 	lines(zr2~Ns)
 
 	best=which(zr2==max(na.omit(zr2)))[1]
