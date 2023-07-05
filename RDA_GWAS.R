@@ -287,18 +287,22 @@ colnames(traits)=tnames
 if(covs.g!=0) { 
 	 covs=c();ci=3
 	 for (ci in 1:ncol(covars.g)) {
-		   if(is.factor(covars.g[,ci]) | is.integer(covars.g[,ci]) | is.character(covars.g[,ci])) { 
-			  	co=as.factor(covars.g[,ci]) 
-				covs=cbind(covs,model.matrix(~0+co)[,-1]) 
-			 }  else { 
-				 co=covars.g[,ci]
-				 covs=cbind(covs,co)
-			 }
+	   if(is.factor(covars.g[,ci]) | is.integer(covars.g[,ci]) | is.character(covars.g[,ci])) { 
+	     co=as.factor(covars.g[,ci])
+	     dum=data.frame(model.matrix(~0+co))
+	     colnames(dum)=paste(colnames(covars.g)[ci],colnames(dum),sep="_")
+	     colnames(dum)=sub("_co","_",colnames(dum))
+	     colnames(dum)=sub("^co","",colnames(dum))
+	     colnames(dum)=sub("_model.+","",colnames(dum))
+	     covs=cbind(covs,dum)
+	     
+	   }  else { 
+	     covs=cbind(covs,covars.g[,ci])
+	     colnames(covs)[ncol(covs)]=colnames(covars.g)[ci]
+	   }
 	 }	 
-	 colnames(covs)=paste("co",1:ncol(covs),sep="")
-	 row.names(covs)=row.names(covars.g)
-	 covcols=colnames(covs)
 }
+row.names(covs)=row.names(covars.g)
 
 # ---- splitting into train and test sets
 
