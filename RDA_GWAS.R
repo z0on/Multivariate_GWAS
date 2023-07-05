@@ -246,8 +246,8 @@ gt=fread(gtfile,nThread=4)
 message("done")
 # removing possibly duplicated sites
 gt=distinct(gt,gt[,1:2],.keep_all=T)
-row.names(gt)=paste(gt[,1],gt[,2],sep=":")
-if(grep("paste",names(gt)[ncol(gt)])==1) { gt=gt[,-ncol(gt)]}
+row.names(gt)=paste(t(gt[,1]),t(gt[,2]),sep=":")
+if(length(grep("paste",names(gt)[ncol(gt)]))==1) { gt=gt[,-ncol(gt)]}
 gt=gt[,-c(1,2)]
 colnames(gt)=bams
 
