@@ -322,7 +322,7 @@ if (hold.out!=0) {
 ibs=ibs[goods.use,goods.use]
 if(covs.g!=0) { 
   covs=data.frame(covs[goods.use,])
-  colnames(covs)=covcols
+#  colnames(covs)=covcols
 }
 traits=data.frame(traits[goods.use,])
 rownames(traits)=goods.use
