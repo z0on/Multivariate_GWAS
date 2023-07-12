@@ -285,7 +285,7 @@ colnames(traits)=tnames
 # ------ dummifying genetic covariates
 
 if(covs.g!=0) { 
-	 covs=c();ci=3
+	 covs=c()
 	 for (ci in 1:ncol(covars.g)) {
 	   if(is.factor(covars.g[,ci]) | is.integer(covars.g[,ci]) | is.character(covars.g[,ci])) { 
 	     co=as.factor(covars.g[,ci])
