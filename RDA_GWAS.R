@@ -290,6 +290,7 @@ if(covs.g!=0) {
 	   if(is.factor(covars.g[,ci]) | is.integer(covars.g[,ci]) | is.character(covars.g[,ci])) { 
 	     co=as.factor(covars.g[,ci])
 	     dum=data.frame(model.matrix(~0+co))
+	     dum=dum[,-ncol(dum)]
 	     colnames(dum)=paste(colnames(covars.g)[ci],colnames(dum),sep="_")
 	     colnames(dum)=sub("_co","_",colnames(dum))
 	     colnames(dum)=sub("^co","",colnames(dum))
