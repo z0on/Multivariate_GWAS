@@ -547,7 +547,7 @@ message("      ",length(sorted)," blips")
 }
 
 chosen=which(gwas$ldpruned==1)
-message(length(chosen)," blips left after pruning")
+message("\n",length(chosen)," blips left after pruning")
 
 # replotting pruned manhattan plot
 if (plots) { 
