@@ -587,7 +587,7 @@ for (a in seq(0,1,0.1)) {
 	p=gnets(scale(t(gt[chosen,]),scale=F),scale(t(gt.test[chosen,]),scale=F),sample.scores,traits.test[,1],alpha=a)
 	r2s=append(r2s,p[[1]])
 }
-alpha=seq(0,1,0.1)[which(r2s==max(r2s))]
+alpha=seq(0,1,0.1)[which(r2s==max(r2s))[1]]
 message(" ",alpha)
 
 net.CV = cv.glmnet(t(gt[chosen,]), sample.scores, nfolds=10,alpha=alpha,family="gaussian")
