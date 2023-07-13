@@ -3,8 +3,9 @@
 
 ### Advantages:
 - leverages natural SNP covariance structure to detect polygenic signals,
-- naturally generates empirical null distribution to detect true signal and calculate p-values,
-- any number of nuisance covariates can be removed without loss of power,
+- uses empirical null distribution to detect true signal and calculate p-values,
+- generates diagnostic plots to see whether there is any signal,
+- uses cross-validation to confirm predictive power of identified SNPs,
 - several correlated traits can be used together as a "compound trait".
 
 The key script here is **`RDA_GWAS.R`**, which is designed for command-line usage . 
