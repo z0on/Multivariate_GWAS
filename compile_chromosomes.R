@@ -310,7 +310,11 @@ zr2=c();Ns=c()
 for (s in ns) {
 	 Ns=append(Ns,s)
 	 allpreds=zr[[s]]
-	 zr2=append(zr2,cor(allpreds$lm,allpreds$true))
+	 if(sd(allpreds$lm)==0) { 
+	   zr2=append(zr2,0) 
+	 } else { 
+	   zr2=append(zr2,cor(allpreds$lm,allpreds$true))
+	 }
 }
 if(plots) {
  	plot(zr2~Ns,xlab="N(SNPs)",ylab="prediction R",log="x")
