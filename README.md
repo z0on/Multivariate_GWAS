@@ -5,6 +5,7 @@
 - leverages natural SNP covariance structure to detect polygenic signals,
 - uses empirical null distribution to detect true signal and calculate p-values,
 - generates diagnostic plots to see whether there is any signal,
+- uses simple linear as well as regulatized regression (lasso - ridge),
 - uses cross-validation to confirm predictive power of identified SNPs,
 - several correlated traits can be used together as a "compound trait".
 
