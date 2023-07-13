@@ -613,81 +613,85 @@ save(gwas,file=paste(outfile,"_gwas.RData",sep=""))
 if(plots){
   png(paste(outfile,"_predictions.png",sep=""),height=1200,width=3000,res=400)
   par(mfrow=c(1,3))
-	goodst=row.names(traits.test)[which(!is.na(traits.test[,1]))]
-	if(is.character(traits.test[goodst[1],1])) { 
-		tt=as.numeric(as.factor(traits.test[goodst,1])) 
-	} else { tt=as.numeric(traits.test[goodst,1]) }
-	gt.test=gt.test[,goodst]
-
-# scanning numbers of good SNPs, looking for best prediction
-	snps=row.names(gwas[chosen,])[order(abs(gwas[chosen,"zscore"]),decreasing=T)]
-	pred.rr=c();pred.lm=c()
-	# head(out)
-	# plot(beta.rr~beta,out)
-	message("scanning for best number of SNPs...")
-	ns=unique(round(10^(seq(0.1,log(length(snps),10),length.out=30))))
-	pb=txtProgressBar(0,length(ns))
-	zr=vector("list", length = length(ns));cp=0;maxcp=0
-	for (j in 1:length(ns)) {
-		s=ns[j]
-		chosen2=snps[1:s]
-		betas=gwas[chosen2,"beta"];
-		gtt=gt.test[chosen2,]
-		for (i in 1:ncol(gtt)) {
-			pred.lm[i]=sum(betas*gtt[,i])
-		}	
-		preds=data.frame(cbind(lm=pred.lm,true=tt))
-		row.names(preds)=goodst
-		zr[[s]]=preds
-		setTxtProgressBar(pb,j)
-	}
-
-	zr2=c();Ns=c()
-	for (s in ns) {
-		 Ns=append(Ns,s)
-		 allpreds=zr[[s]]
-		 zr2=append(zr2,cor(allpreds$lm,allpreds$true))
-	 }
-	plot(zr2~Ns,xlab="N(SNPs)",ylab="prediction R",log="x",mgp=c(2.3,1,0))
-	lines(zr2~Ns)
-
-	best=which(zr2==max(na.omit(zr2)))[1]
-	allpreds=zr[[ns[best]]]
-	N=ns[best]
-
-	
-	message("\n------------\nSimple lm prediction:")
-	message("    N SNPs: ",N)
-	message("    R2: ",round(max(zr2),2))
-	print(head(gwas[snps[1:N],c("zscore","beta","beta.rr","r2")]))
-	
-	
-	jitter=0.01*max(allpreds$true)
-	allpreds$re.lm=rescale(allpreds$lm,range(allpreds$true))+rnorm(nrow(allpreds),0,jitter)
-	allpreds$re.true=allpreds$true+rnorm(nrow(allpreds),0,jitter)
-
-	plot(re.lm~re.true,allpreds,main=paste("Nsnps:",N," lm"),ylab="predicted",xlab="observed",mgp=c(2.3,1,0))
-	mtext(paste("R2 =",round(cor(allpreds$lm,allpreds$true)^2,2)),cex=0.6)
-
-# regularized prediction
-	rr=c()
-	for (i in 1:ncol(gt.test)) {
-		rr[i]=sum(gwas[chosen,"beta.rr"]*gt.test[chosen,i])
-	}
-	allpreds=data.frame(cbind(rr,true=tt))
-	N=sum(gwas[chosen,"beta.rr"]!=0)
-#	head(allpreds)
-	allpreds$re.rr=rescale(allpreds$rr,range(allpreds$true))+rnorm(nrow(allpreds),0,jitter)
-	allpreds$re.true=allpreds$true+rnorm(nrow(allpreds),0,jitter)
-	
-	plot(re.rr~re.true,allpreds,main=paste("Nsnps:",N," glmnet"),ylab="predicted",xlab="observed",mgp=c(2.3,1,0))
-	mtext(paste("R2 =",round(cor(allpreds$rr,allpreds$true)^2,2)),cex=0.6)
-	invisible(dev.off())
-	
-	message("\n------------\nRegularized regression prediction:")
-	message("    N snps: ",N)
-	message("    R2: ",round(cor(allpreds$rr,allpreds$true)^2,2))
-	message("    top ten SNPs:")
-	print(head(gwas[chosen,c("zscore","beta","beta.rr","r2")][order(gwas[chosen,"beta.rr"],decreasing=T),]))
-	
-}
+  goodst=row.names(traits.test)[which(!is.na(traits.test[,1]))]
+  if(is.character(traits.test[goodst[1],1])) { 
+    tt=as.numeric(as.factor(traits.test[goodst,1])) 
+  } else { tt=as.numeric(traits.test[goodst,1]) }
+  if(sd(tt)==0) { stop("zero variation in trait in holdout set")}
+  gt.test=gt.test[,goodst]
+  
+  # scanning numbers of good SNPs, looking for best prediction
+  snps=row.names(gwas[chosen,])[order(abs(gwas[chosen,"zscore"]),decreasing=T)]
+  pred.rr=c();pred.lm=c()
+  # head(out)
+  # plot(beta.rr~beta,out)
+  message("scanning for best number of SNPs...")
+  ns=unique(round(10^(seq(0.1,log(length(snps),10),length.out=30))))
+  pb=txtProgressBar(0,length(ns))
+  zr=vector("list", length = length(ns));cp=0;maxcp=0;j=3
+  for (j in 1:length(ns)) {
+    s=ns[j]
+    chosen2=snps[1:s]
+    betas=gwas[chosen2,"beta"];
+    gtt=gt.test[chosen2,]
+    for (i in 1:ncol(gtt)) {
+      pred.lm[i]=sum(betas*gtt[,i])
+    }
+    preds=data.frame(cbind(lm=pred.lm,true=tt))
+    row.names(preds)=goodst
+    zr[[s]]=preds
+    setTxtProgressBar(pb,j)
+  }
+  zr[[4]]
+  zr2=c();Ns=c();s=1
+  for (s in ns) {
+    Ns=append(Ns,s)
+    allpreds=zr[[s]]
+    if(sd(allpreds$lm)==0) { 
+      zr2=append(zr2,0) 
+      } else { 
+        zr2=append(zr2,cor(allpreds$lm,allpreds$true))
+      }
+  }
+  plot(zr2~Ns,xlab="N(SNPs)",ylab="prediction R",log="x",mgp=c(2.3,1,0))
+  lines(zr2~Ns)
+  
+  best=which(zr2==max(zr2))[1]
+  allpreds=zr[[ns[best]]]
+  N=ns[best]
+  
+  
+  message("\n------------\nSimple lm prediction:")
+  message("    N SNPs: ",N)
+  message("    R2: ",round(max(zr2),2))
+  print(head(gwas[snps[1:N],c("zscore","beta","beta.rr","r2")]))
+  
+  
+  jitter=0.1*sd(allpreds$true)
+  allpreds$re.lm=rescale(allpreds$lm,range(allpreds$true))+rnorm(nrow(allpreds),0,jitter)
+  allpreds$re.true=allpreds$true+rnorm(nrow(allpreds),0,jitter)
+  
+  plot(re.lm~re.true,allpreds,main=paste("Nsnps:",N," lm"),ylab="predicted",xlab="observed",mgp=c(2.3,1,0))
+  mtext(paste("R2 =",round(cor(allpreds$lm,allpreds$true)^2,2)),cex=0.6)
+  
+  # regularized prediction
+  rr=c()
+  for (i in 1:ncol(gt.test)) {
+    rr[i]=sum(gwas[chosen,"beta.rr"]*gt.test[chosen,i])
+  }
+  allpreds=data.frame(cbind(rr,true=tt))
+  N=sum(gwas[chosen,"beta.rr"]!=0)
+  #	head(allpreds)
+  allpreds$re.rr=rescale(allpreds$rr,range(allpreds$true))+rnorm(nrow(allpreds),0,jitter)
+  allpreds$re.true=allpreds$true+rnorm(nrow(allpreds),0,jitter)
+  
+  plot(re.rr~re.true,allpreds,main=paste("Nsnps:",N," glmnet"),ylab="predicted",xlab="observed",mgp=c(2.3,1,0))
+  mtext(paste("R2 =",round(cor(allpreds$rr,allpreds$true)^2,2)),cex=0.6)
+  invisible(dev.off())
+  
+  message("\n------------\nRegularized regression prediction:")
+  message("    N snps: ",N)
+  message("    R2: ",round(cor(allpreds$rr,allpreds$true)^2,2))
+  message("    top ten SNPs:")
+  print(head(gwas[chosen,c("zscore","beta","beta.rr","r2")][order(gwas[chosen,"beta.rr"],decreasing=T),]))
+ }
