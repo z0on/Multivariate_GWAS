@@ -20,7 +20,11 @@ Simply clone the github repository and use R scripts as command-line programs (e
 
 `covars.e=[filename]`  Table of NON-GENETIC covariates that affect traits irrespective of genotype, e.g., sampling time, age of individual, sampling location (if there is panmixia across locations! see below if not). These will be regressed out of traits. Rows - samples, columns - covariates. First column must be sample names. Header line must be present (sample, names of covariates). May not fully match the genotype table - the script will match them using the `sample` column. Rows containing NA will be removed.
 
-`covars.g=[filename]`  Table of GENETIC covariates affecting genotypes, e.g. sequencing batch, read depth, or sampling location if there are only a few of those (2-3) and there is some genetic subdivision between them (if panmixia, use `covars.e`, see above). If there are more locations with some genetic subdivision, use instead genetic PCs that show significant correlation with population designation, for example, when running summary(lm(pc1~location). These covariates will be regressed out of genotypes. Same format as `covars.e`.
+`covars.g=[filename]`  Table of GENETIC covariates affecting genotypes, e.g. sequencing batch, read depth, or sampling location if there are only a few of those (2-3) and there is some genetic subdivision between them (if panmixia, use `covars.e`, see above). If there are more locations with some genetic subdivision, use instead genetic PCs that show significant correlation with population designation, for example, when running 
+```R
+summary(lm(pc1~location))
+```
+These covariates will be regressed out of genotypes. Same format as `covars.e`.
 
 `traits=[filename]` Table of trait(s). First column must be sample names. There must be at least 2 columns (samples, 1 trait). Header line must be present (sample, names of traits). Just like `covars`, this table may not fully match the genotype table; rows containing NAs will be removed.
 
